@@ -1,3 +1,8 @@
+<?php
+
+require_once __DIR__.'/../bootstrap/app.php';
+
+?>
 
 <!DOCTYPE html>
 <html class=''>
@@ -13,50 +18,8 @@
  <![endif]-->
  <!--[if IE 9]>        <html class="no-js ie lt-ie10"> <![endif]-->
 
-<link rel="stylesheet" type="text/css" href="main.css">
+<link rel="stylesheet" type="text/css" href="/css/main.css">
 <style>
-
-
-.jumbotron {
-  height: 50vh;
-  padding: 20vh 0;
-  text-align: center;
-  display: -webkit-box;
-  display: -webkit-flex;
-  display: -ms-flexbox;
-  display: flex;
-  -webkit-box-align: center;
-  -webkit-align-items: center;
-      -ms-flex-align: center;
-          align-items: center;
-  -webkit-box-pack: center;
-  -webkit-justify-content: center;
-      -ms-flex-pack: center;
-          justify-content: center;
-  position: relative;
-  background: #3d3c46;
-}
-.jumbotron:after {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 0;
-  bottom: 0;
-  z-index: 1;
-  background: url("../images/bg.jpg") no-repeat;
-  opacity: 0.5;
-  background-size: 100% auto;
-}
-.jumbotron > article {
-  position: relative;
-  z-index: 2;
-}
-.jumbotron > article p, .jumbotron > article h1 {
-  color: white;
-}
-
-
 
 </style>
 
@@ -67,7 +30,7 @@
           <nav class='menu col'>
               <ul>
 
-                <li><a href="#">Home</a></li>
+                <li><a href="/">Home</a></li>
                 <li><a href="#">About</a>
                     <ul>
                       <li>History</li>
@@ -76,6 +39,7 @@
                 </li>
                 <li><a href="#">Feature</a></li>
                 <li><a href="#">Portfolio</a></li>
+                <li><a href="/test.php">Test</a></li>
                 <li><a href="#">Contact</a></li>
               </ul>
               <label for="navbar-checkbox" class="navbar-handle"></label>
