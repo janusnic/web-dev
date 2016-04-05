@@ -59,29 +59,28 @@ require_once __DIR__.'/../bootstrap/app.php';
         
     <section class="row border-top border-bottom">
        <article class="content col-6">
-        <h2>Grids in Action</h2>
-      <p>
-        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam congue purus non turpis vulputate mollis. Duis sit amet neque risus. Etiam vitae pulvinar enim, ac congue elit. Praesent in pretium ante, id aliquet mauris. Ut nec justo orci. Nullam vel
-        tellus mi. Nulla tincidunt tincidunt nisi sit amet posuere. Praesent pellentesque mauris sed dictum ultricies. Pellentesque rhoncus nunc at consectetur fringilla. Curabitur sit amet tempus elit, sit amet auctor felis.
-      </p>
-      <p>
-        Quisque tincidunt, justo eget accumsan tempus, risus nisl tincidunt nisi, nec feugiat lectus mi vel neque. Proin mattis neque quis nunc consequat pretium. Etiam porttitor consequat diam id congue. Aliquam lectus erat, pellentesque sed sodales a, luctus
-        eu enim. Suspendisse magna lorem, ullamcorper vitae varius in, cursus a dui. In sed mauris quam. Quisque nec libero sed metus elementum pulvinar. Phasellus dictum, lacus sed tempus bibendum, dolor arcu commodo enim, vestibulum rutrum tellus tortor
-        vel sapien. Nullam nec lacus id sapien gravida sagittis. Phasellus tincidunt lorem sit amet arcu vulputate, nec venenatis nisl tincidunt. Sed id sapien in odio vulputate aliquet. Aliquam eget diam a arcu imperdiet mollis.
-      </p>
-      <p>
-        Praesent pulvinar tellus sit amet pellentesque bibendum. Nullam malesuada accumsan leo, id mattis dui suscipit non. Etiam vitae viverra orci. In non elementum libero, vitae rutrum felis. Nunc vulputate metus id dapibus feugiat. Nunc vel vestibulum odio,
-        vitae commodo orci. Duis dui urna, pharetra nec risus sit amet, bibendum eleifend nisi. Proin tempus maximus dignissim.
-      </p>
-      <p>
-        Fusce vestibulum dolor a justo tincidunt, quis efficitur ante lacinia. Aliquam at magna at magna cursus pulvinar. Proin pharetra congue tincidunt. Maecenas tincidunt et nibh vel egestas. Cras eget nisi felis. Nunc at pellentesque neque, quis ornare massa.
-        Proin fringilla aliquam lacus, eget mollis diam bibendum sodales. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia Curae; Vestibulum posuere felis arcu, eget mollis leo scelerisque non.
-      </p>
-      <p>
-        Morbi non volutpat urna. Curabitur aliquet laoreet eros, ac bibendum sapien tristique sed. Sed luctus urna ante, sed accumsan eros auctor ut. Nulla facilisi. Ut maximus tristique nisl. Curabitur est lorem, viverra non lobortis eget, convallis in augue.
-        Sed tincidunt suscipit est eget posuere. Aenean imperdiet euismod sagittis. Nam ullamcorper, ligula ut congue blandit, elit lorem cursus leo, et suscipit justo enim in lacus. Integer et fringilla nibh. Integer quis nisl id arcu luctus porta ut
-        non magna. Aenean malesuada bibendum consectetur.
-      </p>
+
+       <?php
+        try {
+
+          $stmt = $db->query('SELECT id, title, description, created FROM blog_posts ORDER BY id DESC');
+
+          while($row = $stmt->fetch()){
+            
+    //        echo '<div>';
+              echo '<h2><a href="view.php?id='.$row['id'].'">'.$row['title'].'</a></h2>';
+              echo '<p>Posted on '.date('jS M Y H:i:s', strtotime($row['created'])).'</p>';
+              echo '<p>'.$row['description'].'</p>';       
+              echo '<p><a href="view.php?id='.$row['id'].'">Read More</a></p>';       
+      //      echo '</div>';
+
+          }
+
+        } catch(PDOException $e) {
+            echo $e->getMessage();
+        }
+      ?>
+        
     </article>
     
     <section id="middle" class="sidebar col-4 border-left border-right">
