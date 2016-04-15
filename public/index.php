@@ -1,51 +1,11 @@
 <?php
 
 require_once __DIR__.'/../bootstrap/app.php';
-
+require_once __DIR__.'/../resources/views/layouts/header.php';
+require_once __DIR__.'/../resources/views/layouts/nav.php';
 ?>
 
-<!DOCTYPE html>
-<html class=''>
-<head>
 
-<meta charset='UTF-8'>
-<meta http-equiv="X-UA-Compatible" content="IE=edge">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-    
- <!--[if lt IE 7]>     <html class="no-js ie lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
- <!--[if IE 7]>        <html class="no-js ie lt-ie9 lt-ie8"> <![endif]-->
- <!--[if IE 8]>        <html class="no-js ie lt-ie9">
- <![endif]-->
- <!--[if IE 9]>        <html class="no-js ie lt-ie10"> <![endif]-->
-
-<link rel="stylesheet" type="text/css" href="/css/main.css">
-<style>
-
-</style>
-
-</head><body>
-    <header>
-      <div class="row">
-        <input type="checkbox" id="navbar-checkbox" class="navbar-checkbox">
-          <nav class='menu col'>
-              <ul>
-
-                <li><a href="/">Home</a></li>
-                <li><a href="#">About</a>
-                    <ul>
-                      <li>History</li>
-                      <li>Very long and tedious history</li>
-                    </ul>
-                </li>
-                <li><a href="#">Feature</a></li>
-                <li><a href="#">Portfolio</a></li>
-                <li><a href="/test.php">Test</a></li>
-                <li><a href="#">Contact</a></li>
-              </ul>
-              <label for="navbar-checkbox" class="navbar-handle"></label>
-          </nav>
-          </div>
-    </header>
 
     <section class="jumbotron">
       <article>
@@ -67,13 +27,11 @@ require_once __DIR__.'/../bootstrap/app.php';
 
           while($row = $stmt->fetch()){
             
-    //        echo '<div>';
               echo '<h2><a href="view.php?id='.$row['id'].'">'.$row['title'].'</a></h2>';
               echo '<p>Posted on '.date('jS M Y H:i:s', strtotime($row['created'])).'</p>';
               echo '<p>'.$row['description'].'</p>';       
               echo '<p><a href="view.php?id='.$row['id'].'">Read More</a></p>';       
-      //      echo '</div>';
-
+    
           }
 
         } catch(PDOException $e) {
@@ -117,11 +75,5 @@ require_once __DIR__.'/../bootstrap/app.php';
         </article>
     </aside>
     </main>
-    <footer class="col-12">
-        <h4>Footer</h4>
-        <p>&copy; <a href="#" class="brand col">Site Name</a></p>
-    </footer>
-
     
-
-</body></html>
+<?php require_once __DIR__.'/../resources/views/layouts/footer.php'; ?>
