@@ -2,7 +2,18 @@
 require_once __DIR__.'/../../bootstrap/app.php';
 require_once __DIR__.'/../../resources/views/layouts/header.php';
 ?>
-
+<script src="//tinymce.cachefly.net/4.0/tinymce.min.js"></script>
+  <script>
+          tinymce.init({
+              selector: "textarea",
+              plugins: [
+                  "advlist autolink lists link image charmap print preview anchor",
+                  "searchreplace visualblocks code fullscreen",
+                  "insertdatetime media table contextmenu paste"
+              ],
+              toolbar: "insertfile undo redo | styleselect | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image"
+          });
+  </script>
 <main>
     <?php require_once __DIR__.'/../../resources/views/layouts/nav_admin.php';?>    
     <section class="row border-top border-bottom">

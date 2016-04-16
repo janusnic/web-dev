@@ -5,6 +5,7 @@
               <ul>
                 <li><a href="/">Home</a></li>
                 <li><a href="./">Blog</a></li>
+                <li><a href="./users.php">Users</a></li>
               </ul>
               <label for="navbar-checkbox" class="navbar-handle"></label>
           </nav>
