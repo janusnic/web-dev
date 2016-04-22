@@ -1,10 +1,10 @@
 <?php //include config
-require_once __DIR__.'/../../bootstrap/app.php';
-require_once __DIR__.'/../../resources/views/layouts/header.php';
+require_once __DIR__.'/../bootstrap/app.php';
+require_once __DIR__.'/../resources/views/layouts/header.php';
 ?>
 
 <main>
-    <?php require_once __DIR__.'/../../resources/views/layouts/nav_admin.php';?>    
+    <?php require_once __DIR__.'/../resources/views/layouts/nav_admin.php';?>    
 
     <section class="row border-top border-bottom">
        <article class="content col-8">
@@ -98,4 +98,4 @@ require_once __DIR__.'/../../resources/views/layouts/header.php';
 </article>
 </section>
 </main>
-<?php require_once __DIR__.'/../../resources/views/layouts/footer.php'; ?>
+<?php require_once __DIR__.'/../resources/views/layouts/footer.php'; ?>
