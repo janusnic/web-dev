@@ -1,11 +1,14 @@
 <?php
 
-class User {
+include('class.password.php');
+
+class User extends Password{
 
     private $db;
 	
 	function __construct($db){
-			
+		parent::__construct();
+	
 		$this->_db = $db;
 	}
 
