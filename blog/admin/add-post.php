@@ -50,11 +50,13 @@ require_once __DIR__.'/../resources/views/layouts/header.php';
 
                   try {
 
+                      $postSlug = slug($postTitle);
                       
                       //insert into database
-                      $stmt = $db->prepare('INSERT INTO blog_posts (title,description,content,created) VALUES (:postTitle, :postDesc, :postCont, :postDate)') ;
+                      $stmt = $db->prepare('INSERT INTO blog_posts (title,description,content,created) VALUES (:postTitle, :postSlug, :postDesc, :postCont, :postDate)') ;
                       $stmt->execute(array(
                           ':postTitle' => $title,
+                          ':postSlug' => $postSlug,
                           ':postDesc' => $description,
                           ':postCont' => $content,
                           ':postDate' => date('Y-m-d H:i:s')

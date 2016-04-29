@@ -2,9 +2,10 @@
 
 require_once __DIR__.'/../bootstrap/app.php';
 
-$stmt = $db->prepare('SELECT id, title, content, created FROM blog_posts WHERE id = :postID');
-$stmt->execute(array(':postID' => $_GET['id']));
+$stmt = $db->prepare('SELECT id, title, content, created FROM blog_posts WHERE slug = :postSlug');
+$stmt->execute(array(':postSlug' => $_GET['id']));
 $row = $stmt->fetch();
+
 
 //if post does not exists redirect user.
 if($row['id'] == ''){
@@ -39,17 +40,9 @@ require_once __DIR__.'/../resources/views/layouts/nav.php';
     
     <aside id="sidebar" class="sidebar col-4 border-left border-right">
   
-        <article>
-            <h2>3rd Content Area</h2>
-            <p>Eodem modo typi, qui nunc nobis videntur parum clari, fiant sollemnes in futurum.</p>
-            <p>Lorem ipsum dolor sit amet, consectetuer adipiscing elit, sed diam nonummy nibh euismod tincidunt ut laoreet dolore magna aliquam erat volutpat.</p>
-            <p>Eodem modo typi, qui nunc nobis videntur parum clari, fiant sollemnes in futurum.</p>
-        </article>
         
         <article>
-                <h3>Sidebar Title</h3>
-                <p>
-                  Vel tellus mi. Nulla tincidunt tincidunt nisi sit amet posuere. Praesent pellentesque mauris sed dictum ultricies. Pellentesque rhoncus nunc at consectetur fringilla. Curabitur sit amet tempus elit, sit amet auctor felis.</p>
+                 <?php require('sidebar.php'); ?>
             
         </article>
         </aside>
