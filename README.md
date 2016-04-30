@@ -1315,3 +1315,175 @@ archive.php
     RewriteCond %{REQUEST_FILENAME} !-f [NC]
 
     RewriteRule ^(.*)$ view.php?id=$1 [QSA,L]
+
+
+array_walk_recursive
+====================
+array_walk_recursive — Рекурсивно применяет пользовательскую функцию к каждому элементу массива
+
+  bool array_walk_recursive ( array &$array , callable $callback [, mixed $userdata = NULL ] )
+Применяет пользовательскую функцию callback к каждому элементу массива input. Эта функция обрабатывает каждый элемент многомерного массива.
+
+Список параметров 
+-----------------
+array
+Входной массив.
+
+callback
+Обычно, callback принимает два параметра. Первым параметром идет значение элемента массива input, а вторым - его ключ.
+
+Если требуется, чтобы функция callback изменила значения в массиве, определите первый параметр callback как ссылку. Тогда все изменения будут применены к элементам массива.
+
+userdata
+Если указан необязательный параметр userdata, то он будет передан третьим параметром функции callback.
+
+Возвращаемые значения 
+---------------------
+Возвращает TRUE в случае успешного завершения или FALSE в случае возникновения ошибки.
+
+Пример использования array_walk_recursive()
+
+    <?php
+    $sweet = array('a' => 'apple', 'b' => 'banana');
+    $fruits = array('sweet' => $sweet, 'sour' => 'lemon');
+
+    function test_print($item, $key)
+    {
+        echo "$key holds $item\n";
+    }
+
+    array_walk_recursive($fruits, 'test_print');
+    ?>
+Результат выполнения данного примера:
+
+    a holds apple
+    b holds banana
+    sour holds lemon
+Обратите внимание, что ключ 'sweet' никогда не отображается. Любой ключ, содержащий значение типа array, не будет передаваться в функцию.
+
+add-post.php
+------------
+
+         if(isset($_POST['submit'])){
+
+              //$_POST = array_map( 'stripslashes', $_POST );
+              array_walk_recursive($_POST, create_function('&$val', '$val = stripslashes($val);'));
+
+              try {
+                      $postSlug = slug($title);
+                      //insert into database
+                      $stmt = $db->prepare('INSERT INTO blog_posts (title,slug,description,content,created) VALUES (:postTitle, :postSlug, :postDesc, :postCont, :postDate)') ;
+                      $stmt->execute(array(
+                          ':postTitle' => $title,
+                          ':postSlug' => $postSlug,
+                          ':postDesc' => $description,
+                          ':postCont' => $content,
+                          ':postDate' => date('Y-m-d H:i:s')
+                      ));
+                      $postID = $db->lastInsertId();
+                    //add categories
+                    if(is_array($catID)){
+                      foreach($_POST['catID'] as $catID){
+                        $stmt = $db->prepare('INSERT INTO blog_post_cats (postID,catID) VALUES(:postID,:catID)');
+                        $stmt->execute(array(
+                          ':postID' => $postID,
+                          ':catID' => $catID
+                        ));
+                      }
+                    }
+                   //redirect to index page
+                   header('Location: index.php?action=added');
+                   exit;
+
+          <p><label>Content</label><br />
+            <textarea name='content' cols='60' rows='10'><?php if(isset($error)){ echo $_POST['content'];}?></textarea></p>
+          <fieldset>
+          <legend>Categories</legend>
+          <?php 
+          $stmt2 = $db->query('SELECT catID, catTitle FROM blog_cats ORDER BY catTitle');
+          while($row2 = $stmt2->fetch()){
+            if(isset($_POST['catID'])){
+              if(in_array($row2['catID'], $_POST['catID'])){
+                           $checked="checked";
+                        }else{
+                           $checked = null;
+                        }
+            }
+              echo "<input type='checkbox' name='catID[]' value='".$row2['catID']."' $checked> ".$row2['catTitle']."<br />";
+          }
+          ?>
+        </fieldset>
+        <p><input type='submit' name='submit' value='Submit'></p>
+
+edit-post.php
+-------------
+
+  //if form has been submitted process it
+  if(isset($_POST['submit'])){
+        array_walk_recursive($_POST, create_function('&$val', '$val = stripslashes($val);'));
+
+    //collect form data
+    extract($_POST);
+
+    try {
+        $postSlug = slug($title);
+
+                //insert into database
+        $stmt = $db->prepare('UPDATE blog_posts SET title = :postTitle, slug = :postSlug, description = :postDesc, content = :postCont WHERE id = :postID') ;
+        $stmt->execute(array(
+          ':postTitle' => $title,
+                    ':postSlug' => $postSlug,
+          ':postDesc' => $description,
+          ':postCont' => $content,
+          ':postID' => $id
+        ));
+                
+                //delete all items with the current postID
+                $stmt = $db->prepare('DELETE FROM blog_post_cats WHERE postID = :postID');
+                $stmt->execute(array(':postID' => $id));
+                if(is_array($catID)){
+                    foreach($_POST['catID'] as $catID){
+                        $stmt = $db->prepare('INSERT INTO blog_post_cats (postID,catID)VALUES(:postID,:catID)');
+                        $stmt->execute(array(
+                            ':postID' => $id,
+                            ':catID' => $catID
+                        ));
+                    }
+                }
+
+        //redirect to index page
+        header('Location: index.php?action=updated');
+        exit;
+
+        <p><label>Content</label><br />
+        <textarea name='content' cols='60' rows='10'><?php echo $row['content'];?></textarea></p>
+        <fieldset>
+            <legend>Categories</legend>
+
+            <?php
+
+            $stmt2 = $db->query('SELECT catID, catTitle FROM blog_cats ORDER BY catTitle');
+
+            while($row2 = $stmt2->fetch()){
+
+                $stmt3 = $db->prepare('SELECT catID FROM blog_post_cats WHERE catID = :catID AND postID = :postID') ;
+                $stmt3->execute(array(':catID' => $row2['catID'], ':postID' => $row['id']));
+
+                $row3 = $stmt3->fetch(); 
+
+                if($row3['catID'] == $row2['catID']){
+                    $checked = 'checked';
+                } else {
+                    $checked = null;
+                }
+
+                echo "<input type='checkbox' name='catID[]' value='".$row2['catID']."' $checked> ".$row2['catTitle']."<br />";
+            }
+
+            ?>
+
+        </fieldset>
+
+        <p><input type='submit' name='submit' value='Update'></p>
+
+

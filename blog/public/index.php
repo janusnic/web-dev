@@ -27,7 +27,7 @@ require_once __DIR__.'/../resources/views/layouts/nav.php';
 
           while($row = $stmt->fetch()){
             
-              echo '<h1><a href="'.$row['slug'].'">'.$row['postTitle'].'</a></h1>';
+              echo '<h1><a href="'.$row['slug'].'">'.$row['title'].'</a></h1>';
               
               echo '<p>Posted on '.date('jS M Y H:i:s', strtotime($row['created'])).' in ';
 

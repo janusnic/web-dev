@@ -28,7 +28,8 @@ require_once __DIR__.'/../resources/views/layouts/header.php';
           //if form has been submitted process it
           if(isset($_POST['submit'])){
 
-              $_POST = array_map( 'stripslashes', $_POST );
+              //$_POST = array_map( 'stripslashes', $_POST );
+              array_walk_recursive($_POST, create_function('&$val', '$val = stripslashes($val);'));
 
               //collect form data
               extract($_POST);
@@ -50,10 +51,10 @@ require_once __DIR__.'/../resources/views/layouts/header.php';
 
                   try {
 
-                      $postSlug = slug($postTitle);
+                      $postSlug = slug($title);
                       
                       //insert into database
-                      $stmt = $db->prepare('INSERT INTO blog_posts (title,description,content,created) VALUES (:postTitle, :postSlug, :postDesc, :postCont, :postDate)') ;
+                      $stmt = $db->prepare('INSERT INTO blog_posts (title,slug,description,content,created) VALUES (:postTitle, :postSlug, :postDesc, :postCont, :postDate)') ;
                       $stmt->execute(array(
                           ':postTitle' => $title,
                           ':postSlug' => $postSlug,
@@ -61,6 +62,19 @@ require_once __DIR__.'/../resources/views/layouts/header.php';
                           ':postCont' => $content,
                           ':postDate' => date('Y-m-d H:i:s')
                       ));
+
+                      $postID = $db->lastInsertId();
+
+                      //add categories
+                      if(is_array($catID)){
+                        foreach($_POST['catID'] as $catID){
+                          $stmt = $db->prepare('INSERT INTO blog_post_cats (postID,catID) VALUES(:postID,:catID)');
+                          $stmt->execute(array(
+                            ':postID' => $postID,
+                            ':catID' => $catID
+                          ));
+                        }
+                      }
 
                       //redirect to index page
                       header('Location: index.php?action=added');
@@ -92,6 +106,29 @@ require_once __DIR__.'/../resources/views/layouts/header.php';
 
         <p><label>Content</label><br />
         <textarea name='content' cols='60' rows='10'><?php if(isset($error)){ echo $_POST['content'];}?></textarea></p>
+        <fieldset>
+      <legend>Categories</legend>
+
+      <?php 
+
+      $stmt2 = $db->query('SELECT catID, catTitle FROM blog_cats ORDER BY catTitle');
+      while($row2 = $stmt2->fetch()){
+
+        if(isset($_POST['catID'])){
+
+          if(in_array($row2['catID'], $_POST['catID'])){
+                       $checked="checked";
+                    }else{
+                       $checked = null;
+                    }
+        }
+
+          echo "<input type='checkbox' name='catID[]' value='".$row2['catID']."' $checked> ".$row2['catTitle']."<br />";
+      }
+
+      ?>
+
+    </fieldset>
 
         <p><input type='submit' name='submit' value='Submit'></p>
 
