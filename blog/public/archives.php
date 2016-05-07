@@ -16,7 +16,8 @@ require_once __DIR__.'/../resources/views/layouts/nav.php';
 			<?php
 				try {
 
-					//collect month and year data
+					
+                    //collect month and year data
 					$month = $_GET['month'];
 					$year = $_GET['year'];
 
@@ -25,9 +26,18 @@ require_once __DIR__.'/../resources/views/layouts/nav.php';
 					$to = date('Y-m-31 23:59:59', strtotime("$year-$month"));
 
 
+                    $pages = new Paginator('1','p');
 
+                    $stmt = $db->prepare('SELECT id FROM blog_posts WHERE created >= :from AND created <= :to');
+                    $stmt->execute(array(
+                        ':from' => $from,
+                        ':to' => $to
+                    ));
 
-					$stmt = $db->prepare('SELECT * FROM blog_posts WHERE created >= :from AND created <= :to ORDER BY id DESC');
+                    //pass number of records to
+                    $pages->set_total($stmt->rowCount());
+
+                   	$stmt = $db->prepare('SELECT * FROM blog_posts WHERE created >= :from AND created <= :to ORDER BY id DESC '.$pages->get_limit());
 					$stmt->execute(array(
 						':from' => $from,
 						':to' => $to
@@ -54,6 +64,8 @@ require_once __DIR__.'/../resources/views/layouts/nav.php';
 							echo '<p><a href="'.$row['slug'].'">Read More</a></p>';
 					}
 
+                    echo $pages->page_links("a-$month-$year&");
+                    
 				} catch(PDOException $e) {
 				    echo $e->getMessage();
 				}

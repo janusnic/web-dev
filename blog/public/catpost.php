@@ -29,6 +29,13 @@ if($row['catID'] == ''){
 			<?php	
 			try {
 
+				$pages = new Paginator('1','p');
+				$stmt = $db->prepare('SELECT blog_posts.id FROM blog_posts, blog_post_cats WHERE blog_posts.id = blog_post_cats.postID AND blog_post_cats.catID = :catID');
+				$stmt->execute(array(':catID' => $row['catID']));
+
+				//pass number of records to
+				$pages->set_total($stmt->rowCount());
+
 				$stmt = $db->prepare('
 					SELECT 
 						*
@@ -39,8 +46,9 @@ if($row['catID'] == ''){
 						 blog_posts.id = blog_post_cats.postID
 						 AND blog_post_cats.catID = :catID
 					ORDER BY 
-						created DESC
-					');
+						created DESC 
+					'.$pages->get_limit());
+					
 				$stmt->execute(array(':catID' => $row['catID']));
 				while($row = $stmt->fetch()){
 					
@@ -66,6 +74,7 @@ if($row['catID'] == ''){
 					echo '</div>';
 
 				}
+				echo $pages->page_links('c-'.$_GET['id'].'&');
 
 			} catch(PDOException $e) {
 			    echo $e->getMessage();

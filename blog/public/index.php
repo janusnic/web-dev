@@ -23,7 +23,14 @@ require_once __DIR__.'/../resources/views/layouts/nav.php';
        <?php
         try {
 
-          $stmt = $db->query('SELECT id, title, slug, description, created FROM blog_posts ORDER BY id DESC');
+          $pages = new Paginator('1','p');
+
+          $stmt = $db->query('SELECT id FROM blog_posts');
+
+          //pass number of records to
+          $pages->set_total($stmt->rowCount());
+
+          $stmt = $db->query('SELECT id, title, slug, description, created FROM blog_posts ORDER BY id DESC '.$pages->get_limit());
 
           while($row = $stmt->fetch()){
             
@@ -47,6 +54,7 @@ require_once __DIR__.'/../resources/views/layouts/nav.php';
               echo '<p><a href="'.$row['slug'].'">Read More</a></p>';       
     
           }
+          echo $pages->page_links();
 
         } catch(PDOException $e) {
             echo $e->getMessage();
