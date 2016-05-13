@@ -1,655 +1,647 @@
-# web-dev unit_12
+# web-dev unit_13
 
-собственный поиск по сайту с использованием PHP и MySQL
+Laravel
+=======
+бесплатный веб-фреймворк с открытым кодом, предназначенный для разработки с использованием архитектурной модели MVC (Model View Controller — модель-представление-контроллер). Laravel выпущен под лицензией MIT. Исходный код проекта размещается на GitHub.
 
-Пользователь выполняет POST запрос из формы поиска, этот запрос передается специальному скрипту-обработчику, который должен обработать поисковый запрос пользователя и возвратить результат.
+В результате опроса sitepoint.com в декабре 2013 года о самых популярных PHP-фреймворках Laravel занял место самого многообещающего проекта на 2014 год.
 
-Сначала скрипт должен обработать должным образом запрос пользователя для обеспечения безопасности, затем выполняется запрос к базе данных, который возвращает в ассоциативном массиве результаты, которые должны будут выводиться на экран. 
+В 2015 году в результате опроса sitepoint.com по использованию PHP-фреймворков среди программистов занял первое место в номинациях:
 
-Простейший алгоритм следующий:
+- Фреймворк корпоративного уровня
+- Фреймворк для личных проектов
 
-- Создать HTML-форму со строкой поиска, а также кнопкой "Submit". В текстовое поле пользователи будут вводить поисковый запрос, а далее нажимать на кнопку.
-- Получить поисковый запрос (как правило, передаваемый методом GET, но иногда применяют и POST), а также, в целях защиты от XSS, пропустить его через функцию htmlspecialchars().
-- Сделать выборку из соответствующих таблицы (со статьями, новостями, заметками и прочим) тех записей, в которых содержится поисковый запрос. Показываю примерный SQL-запрос для таких случаев:
-SELECT * FROM articles WHERE `text_article` LIKE %search%
-Соответственно, вместо search подставляется строка поиска.
-- Получив записи, в нужном виде выводим их, желательно, по релевантности.
+Laravel был создан Taylor Otwell как более функциональная альтернатива CodeIgniter, который не предусматривал различные дополнительные функции. Первый бета-релиз Laravel стал доступен 9 июня 2011 года, а Laravel 1 вышел в этом же месяце. Laravel 1 включает в себя встроенную поддержку для аутентификации, локализации, модели, представления, сессий, маршрутизации и других механизмов.
 
-создадим форму поиска на странице sidebar.php
+Laravel 2 был выпущен в сентябре 2011 года. Основные новые функции включают в себя поддержку контроллеров, которые сделали фреймворк полностью MVC-совместимым, встроенную поддержку для инверсии управления и систему шаблонов Blade.
 
-    <form name="search" method="post" action="search.php">
-        <input type="search" name="query" placeholder="Поиск">
-        <button type="submit">Найти</button> 
-    </form>
+Laravel 3 был выпущен в феврале 2012 года с набором новых функций, включая интерфейс командной строки (CLI) под именем "Artisan", встроенную поддержку нескольких систем управления базами данных, миграции баз данных в виде контроля версий, обработку событий. Выпуск Laravel 3 получил значительное увеличение числа пользователей, что повлияло на его популярность.
 
-Эта форма и будет отправлять сам поисковый запрос скрипту search.php.
+Официальный сайт - Laravel.com (https://laravel.com/)
+Репозиторий пакетов для Laravel (http://packalyst.com/)
 
-    <?php 
-    require_once __DIR__.'/../bootstrap/app.php';
-    require_once __DIR__.'/../resources/views/layouts/header.php';
-    require_once __DIR__.'/../resources/views/layouts/nav.php';
 
-    ?>
-       <main>
-            
-        <section class="row border-top border-bottom">
-           <article class="content col-8">
+Установка Composer
+==================
+https://getcomposer.org/
 
-            <h1>Blog Search</h1>
-            <hr />
-            <p><a href="./">Blog Index</a></p>
-    <?php
-        $query = $_POST['query']; 
-    
-    //  обрабатывают запрос, чтобы он стал безопасным для базы. Такую обработку нужно делать обязательно, т.  к.  любая форма на Вашем сайте — это потенциальная уязвимость для злоумышленников.
+Composer это инструмент для управления зависимостями в PHP. Он позволяет вам объявлять зависимые библиотеки для вашего проекта и устанавливать их в проект.
 
-    $query = trim($query); 
-    
-    $query = htmlspecialchars($query);
+УПРАВЛЕНИЕ ЗАВИСИМОСТЯМИ.
+------------------------
+Composer это не менеджер пакетов. Да, он занимается "пакетами" или библиотеками, но он управляет ими в контексте каждого проекта, устанавливая их в директорию (например, vendor) внутри проекта. По умолчанию, он никогда не устанавливает ничего глобально. Таким образом, это менеджер зависимостей.
 
-    trim — Удаляет пробелы (или другие символы) из начала и конца строки
+Эта идея не нова, и Composer сильно вдохновлен npm (node.js) и bundler (ruby). Но для PHP подобного инструмента не существовало.
 
+Проблема, которую решает Composer в следующем:
 
-      string trim ( string $str [, string $character_mask = " \t\n\r\0\x0B" ] )
+a) У вас есть проект, который зависит от нескольких библиотек.
+b) Некоторые из этих библиотек зависят от других библиотек.
+c) Вы объявляете зависимые сущности.
+d) Composer находит какие версии каких пакетов должны быть установлены и устанавливает их (то есть скачивает их в ваш проект).
 
-Эта функция возвращает строку str с удаленными из начала и конца строки пробелами. Если второй параметр не передан, trim() удаляет следующие символы:
+ОБЪЯВЛЕНИЕ ЗАВИСИМОСТЕЙ.
+-----------------------
+Допустим, вы создаете проект, и вам необходима библиотека для реализации логирования. Вы решаете использовать monolog. Все что вам нужно сделать, чтобы добавить ее в проект, это создать файл composer.json, в котором будут описаны зависимости проекта.
 
-    " " (ASCII 32 (0x20)), обычный пробел.
-    "\t" (ASCII 9 (0x09)), символ табуляции.
-    "\n" (ASCII 10 (0x0A)), символ перевода строки.
-    "\r" (ASCII 13 (0x0D)), символ возврата каретки.
-    "\0" (ASCII 0 (0x00)), NUL-байт.
-    "\x0B" (ASCII 11 (0x0B)), вертикальная табуляция.
 
-Список параметров 
-
-str
-Обрезаемая строка (string).
-
-character_mask
-Можно также задать список символов для удаления с помощью необязательного аргумента character_mask. Просто перечислите все символы, которые вы хотите удалить. Можно указать конструкцию .. для обозначения диапазона символов.
-
-Возвращаемые значения 
-
-Обрезаемая строка.
-
-Пример использования trim()
-
-      <?php
-
-      $text   = "\t\tThese are a few words :) ...  ";
-      $binary = "\x09Example string\x0A";
-      $hello  = "Hello World";
-      var_dump($text, $binary, $hello);
-
-      print "\n";
-
-      $trimmed = trim($text);
-      var_dump($trimmed);
-
-      $trimmed = trim($text, " \t.");
-      var_dump($trimmed);
-
-      $trimmed = trim($hello, "Hdle");
-      var_dump($trimmed);
-
-      $trimmed = trim($hello, 'HdWr');
-      var_dump($trimmed);
-
-      // удаляем управляющие ASCII-символы с начала и конца $binary
-      // (от 0 до 31 включительно)
-      $clean = trim($binary, "\x00..\x1F");
-      var_dump($clean);
-
-      ?>
-Результат выполнения данного примера:
-
-    string(32) "        These are a few words :) ...  "
-    string(16) "    Example string
-    "
-    string(11) "Hello World"
-
-    string(28) "These are a few words :) ..."
-    string(24) "These are a few words :)"
-    string(5) "o Wor"
-    string(9) "ello Worl"
-    string(14) "Example string"
-
-Обрезание значений массива с помощью trim()
-
-    <?php
-    function trim_value(&$value)
-    {
-        $value = trim($value);
-    }
-
-    $fruit = array('apple','banana ', ' cranberry ');
-    var_dump($fruit);
-
-    array_walk($fruit, 'trim_value');
-    var_dump($fruit);
-
-    ?>
-Результат выполнения данного примера:
-
-    array(3) {
-      [0]=>
-      string(5) "apple"
-      [1]=>
-      string(7) "banana "
-      [2]=>
-      string(11) " cranberry "
-    }
-    array(3) {
-      [0]=>
-      string(5) "apple"
-      [1]=>
-      string(6) "banana"
-      [2]=>
-      string(9) "cranberry"
-    }
-
-
-Возможные трюки: удаление символов из середины строки
-Так как trim() удаляет символы с начала и конца строки string, то удаление (или неудаление) символов из середины строки может ввести в недоумение. trim('abc', 'bad') удалит как 'a', так и 'b', потому что удаление 'a' сдвинет 'b' к началу строки, что также позволит ее удалить. Вот почему это "работает", тогда как trim('abc', 'b') очевидно нет.
-
-
-htmlspecialchars — Преобразует специальные символы в HTML-сущности
-
-    string htmlspecialchars ( string $string [, int $flags = ENT_COMPAT | ENT_HTML401 [, string $encoding = ini_get("default_charset") [, bool $double_encode = true ]]] )
-В HTML некоторые символы имеют особый смысл и должны быть представлены в виде HTML сущностей, чтобы сохранить их значение. Эта функция возвращает строку, над которой проведены эти преобразования. Если вам нужно преобразовать все возможные сущности, используйте htmlentities().
-
-Если входная строка переданная в эту функцию и результирующий документ используют одинаковую кодировку символов, то этой функции достаточно, чтобы подготовить данные для вставки в большинство частей HTML документа. Однако, если данные содержат символы, не определенные в кодировке символов результирующего документа и вы ожидаете сохранения этих символов (как числовые или именованные сущности), то вам недостаточно будет этой и htmlentities() функций (которые только преобразуют подстроки с соответствующими сущностями). Необходимо использовать функцию mb_encode_numericentity().
-
-Производятся следующие преобразования:
-
-    '&' (амперсанд) преобразуется в '&amp;'
-    '"' (двойная кавычка) преобразуется в '&quot;' в режиме ENT_NOQUOTES is not set.
-    "'" (одиночная кавычка) преобразуется в '&#039;' (или &apos;) только в режиме ENT_QUOTES.
-    '<' (знак "меньше чем") преобразуется в '&lt;'
-    '>' (знак "больше чем") преобразуется в '&gt;'
-
-Список параметров 
-
-string
-Конвертируемая строка (string).
-
-flags
-Битовая маска из нижеуказанных флагов, определяющих режим обработки кавычек, некорректных кодовых последовательностей и используемый тип документа. По умолчанию используется ENT_COMPAT | ENT_HTML401.
-
-Доступные значения параметра flags
-
-ENT_COMPAT  Преобразует двойные кавычки, одинарные кавычки не изменяются.
-ENT_QUOTES  Преобразует как двойные, так и одинарные кавычки.
-ENT_NOQUOTES  Оставляет без изменения как двойные, так и одинарные кавычки.
-ENT_IGNORE  Без всяких уведомительных сообщений отбрасывает некорректные кодовые последовательности вместо возврата пустой строки. Использование этого флага не рекомендуется, так как это может привести к » негативным последствиям, связанным с безопасностью.
-ENT_SUBSTITUTE  Заменяет некорреткные кодовые последовательности символом замены Юникода U+FFFD в случае использования UTF-8 и &#FFFD; при использовании другой кодировки, вместо возврата пустой строки.
-ENT_DISALLOWED  Заменяет неверные коды символов для заданного типа документа символом замены юникода U+FFFD (UTF-8) или &#FFFD; (при использовании другой кодировки) вместо того, чтобы оставлять все как есть. Это может быть полезно, например, для того, чтобы убедиться в формальной правильности XML-документов со встроенным внешним контентом.
-ENT_HTML401 Обработка кода в соответствии с HTML 4.01.
-ENT_XML1  Обработка кода в соответствии с XML 1.
-ENT_XHTML Обработка кода в соответствии с XHTML.
-ENT_HTML5 Обработка кода в соответствии с HTML 5.
-encoding
-
-Необязательный аргумент определяющий кодировку, используемую при конвертации симоволов.
-
-Если не указан, то значением по умолчанию для encoding зависит от используемой версии PHP. В PHP 5.6 и старше, для значения по умолчанию используется конфигурационная опция default_charset. В PHP 5.4 и 5.5 используется UTF-8 по умолчанию. Более ранние версии PHP используют ISO-8859-1.
-
-Хотя этот аргумент является технически необязательным, настоятельно рекомендуется   указать правильное значение для вашего кода, если вы используете PHP 5.5 или выше,   или если ваша опция конфигурации default_charset   может быть задана неверно для входных данных.
-
-Для целей этой функции кодировки ISO-8859-1, ISO-8859-15, UTF-8, cp866, cp1251, cp1252 и KOI8-R являются практически эквивалентными, предполагая то, что сама строка string содержит корректные символы в указанной кодировке, то символы, изменяемые htmlspecialchars(), останутся на тех же местах во всех этих кодировках.
-
-Поддерживаются следующие кодировки:
-
-ISO-8859-1  ISO8859-1 Западно-европейская Latin-1.
-ISO-8859-5  ISO8859-5 Редко используемая кириллическая кодировка (Latin/Cyrillic).
-ISO-8859-15 ISO8859-15  Западно-европейская Latin-9. Добавляет знак евро, французские и финские буквы к кодировке Latin-1(ISO-8859-1).
-UTF-8   8-битная Unicode, совместимая с ASCII.
-cp866 ibm866, 866 Кириллическая кодировка, применяемая в DOS.
-cp1251  Windows-1251, win-1251, 1251  Кириллическая кодировка, применяемая в Windows.
-cp1252  Windows-1252, 1252  Западно-европейская кодировка, применяемая в Windows.
-KOI8-R  koi8-ru, koi8r  Русская кодировка.
-BIG5  950 Традиционный китайский, применяется в основном на Тайване.
-GB2312  936 Упрощенный китайский, стандартная национальная кодировка.
-BIG5-HKSCS    Расширенная Big5, применяемая в Гонг-Конге.
-Shift_JIS SJIS, SJIS-win, cp932, 932  Японская кодировка.
-EUC-JP  EUCJP, eucJP-win  Японская кодировка.
-MacRoman    Кодировка, используемая в Mac OS.
-''    Пустая строка активирует режим определения кодировки из файла скрипта (Zend multibyte), default_charset и текущей локали (см. nl_langinfo() и setlocale()), в указанном порядке. Не рекомендуется к использованию.
-
-
-double_encode
-Если параметр double_encode выключен, то PHP не будет преобразовывать существующие html-сущности. По умолчанию преобразуется все без ограничений.
-
-Возвращаемые значения 
-
-Преобразованная строка (string).
-
-Если входная строка string содержит неверную последовательность символов в указанной кодировке encoding, то будет возвращаться пустая строка в случае, если флаги ENT_IGNORE или ENT_SUBSTITUTE не установлены.
-
-
-
-    // Если запрос пустой, то возвращаем соответствующее сообщение пользователю. Если запрос не пустой, проверяем его на размер.
-    
-    if (!empty($query)) 
-    { 
-      // Если поисковый запрос имеет длину менее 3 или более 128 символов, также выводим соответствующие сообщения пользователю. 
-
-        if (strlen($query) < 3) {
-            $text = '<p>Слишком короткий поисковый запрос.</p>';
-            echo $text;
-        } else if (strlen($query) > 128) {
-            $text = '<p>Слишком длинный поисковый запрос.</p>';
-            echo $text;
-        } 
-
-        // Иначе, выполняем запрос к базе данных, который делает выборку идентификатора страницы, ее заголовка, описания.
-        else { 
-        
-        $q = "SELECT * FROM blog_posts WHERE description LIKE ? OR title LIKE ? OR content LIKE ?";
-        
-        $params = array("%$query%", "%$query%", "%$query%");
-        $stmt = $db->prepare($q);
-        $stmt->execute($params);
-        
-        if ($stmt->rowCount() > 0) { 
-                $text = '<p>По запросу <b>'.$query.'</b> найдено совпадений: '.$stmt->rowCount().'</p>';
-                echo $text;
-
-                while($row = $stmt->fetch()){
-
-                    $stmt1 = $db->prepare('SELECT * FROM blog_posts WHERE id = :postID');
-                    $stmt1->execute(array(
-                        ':postID' => $row['id']
-                    ));
-
-                    $row1 = $stmt1->fetch();
-
-                    echo '<h1><a href="'.$row1['slug'].'">'.$row1['title'].'</a></h1>';
-                } 
-            } else {
-                $text = '<p>По вашему запросу ничего не найдено.</p>';
-            }
-        } 
-    } else {
-        $text = '<p>Задан пустой поисковый запрос.</p>';
-    }
-
-
-    ?>
-         </article>
-
-
-        <aside id="sidebar" class="sidebar col-4">
-          <article>
-            <?php require('sidebar.php'); ?>
-          </article>
-        </aside>
-        </section>
-        </main>
-        
-    <?php require_once __DIR__.'/../resources/views/layouts/footer.php'; ?>
-
-
-
-Обработка строки
-
-Порезать строку.
-
-    $query = substr($query, 0, 64);
-
-64 символа пользователю будет достаточно для поиска. 
-
-все "ненормальные" символы.
-
-    $query = preg_replace("/[^\w\x7F-\xFF\s]/", " ", $query);
-
-нельзя давать пользователю возможности искать по слишком коротким словам - кроме всего прочего, это сильно загружает сервер. Итак, разрешим искать только по словам, которые длиннее двух букв (если ограничение больше, надо заменить "{1,2}" на "{1, кол-во символов}").
-
-    $good = trim(preg_replace("/\s(\S{1,2})\s/", " ", ereg_replace(" +", "  "," $query ")));
-
-А после замены плохих слов - надо сжать двойные пробелы (они были сделаны специально для корректного поиска коротких слов).
-
-    $good = ereg_eplace(" +", " ", $good);
-
-
-Подсветка
-
-Чтобы подсвечивать светом или жирным шрифтом искомые слова в тексте, надо сделать следующее:
-
-$highlight = str_replace(" ", "|", $good);
-
-Пробелы достаточно заменить на вертикальную черту - разделитель вариантов в регулярных выражениях. "Плохие" слова мы не подсвечиваем, потому что в базе их не ищем. В коде, который выводит текст пишем:
-
-      $row["text"] = ereg_replace($highlight, "<font color=#cc0000>\\0</font>", $row["text"]);
-
-в тексте встречаются теги HTML:
-
-      $text = eregi_replace(">([^<]*)($words)", ">\\1<font color=#cc0000>\\2</font>", $text);
-
-Применяя такие приемы, можно, во-первых, ограничить свободу действий пользователя и не дать ему 
-а) узнать программную структуру сайта 
-б) вызвать перегрузку сервера (например, отправив мегабайт текста, состоящего из слов длиной в три буквы, чтобы скрипт 250 тысяч раз лазил в базу) 
-в) увидеть сообщение об ошибке в результате попадания в строку спецсимволов языка запросов. 
-
-class.paginator.php
--------------------
-
-      <?php
-      /*
-       * PHP Pagination Class
-       */
-      class Paginator{
-
-              /**
-         * set the number of items per page.
-         *
-         * @var numeric
-        */
-        private $_perPage;
-
-        /**
-         * set get parameter for fetching the page number
-         *
-         * @var string
-        */
-        private $_instance;
-
-        /**
-         * sets the page number.
-         *
-         * @var numeric
-        */
-        private $_page;
-
-        /**
-         * set the limit for the data source
-         *
-         * @var string
-        */
-        private $_limit;
-
-        /**
-         * set the total number of records/items.
-         *
-         * @var numeric
-        */
-        private $_totalRows = 0;
-
-
-
-        /**
-         *  __construct
-         *  
-         *  pass values when class is istantiated 
-         *  
-         * @param numeric  $_perPage  sets the number of iteems per page
-         * @param numeric  $_instance sets the instance for the GET parameter
-         */
-        public function __construct($perPage,$instance){
-          $this->_instance = $instance;   
-          $this->_perPage = $perPage;
-          $this->set_instance();    
-        }
-
-        /**
-         * get_start
-         *
-         * creates the starting point for limiting the dataset
-         * @return numeric
-        */
-        private function get_start(){
-          return ($this->_page * $this->_perPage) - $this->_perPage;
-        }
-
-        /**
-         * set_instance
-         * 
-         * sets the instance parameter, if numeric value is 0 then set to 1
-         *
-         * @var numeric
-        */
-        private function set_instance(){
-          $this->_page = (int) (!isset($_GET[$this->_instance]) ? 1 : $_GET[$this->_instance]); 
-          $this->_page = ($this->_page == 0 ? 1 : $this->_page);
-        }
-
-        /**
-         * set_total
-         *
-         * collect a numberic value and assigns it to the totalRows
-         *
-         * @var numeric
-        */
-        public function set_total($_totalRows){
-          $this->_totalRows = $_totalRows;
-        }
-
-        /**
-         * get_limit
-         *
-         * returns the limit for the data source, calling the get_start method and passing in the number of items perp page
-         * 
-         * @return string
-        */
-        public function get_limit(){
-                return "LIMIT ".$this->get_start().",$this->_perPage";
-              }
-
-              /**
-               * page_links
-               *
-               * create the html links for navigating through the dataset
-               * 
-               * @var sting $path optionally set the path for the link
-               * @var sting $ext optionally pass in extra parameters to the GET
-               * @return string returns the html menu
-              */
-        public function page_links($path='?',$ext=null)
         {
-            $adjacents = "2";
-            $prev = $this->_page - 1;
-            $next = $this->_page + 1;
-            $lastpage = ceil($this->_totalRows/$this->_perPage);
-            $lpm1 = $lastpage - 1;
-
-            $pagination = "";
-          if($lastpage > 1)
-          {   
-              $pagination .= "<div class='pagination'>";
-          if ($this->_page > 1)
-              $pagination.= "<a href='".$path."$this->_instance=$prev"."$ext'>« previous</a>";
-          else
-              $pagination.= "<span class='disabled'>« previous</span>";   
-
-          if ($lastpage < 7 + ($adjacents * 2))
-          {   
-          for ($counter = 1; $counter <= $lastpage; $counter++)
-          {
-          if ($counter == $this->_page)
-              $pagination.= "<span class='current'>$counter</span>";
-          else
-              $pagination.= "<a href='".$path."$this->_instance=$counter"."$ext'>$counter</a>";                   
-          }
-          }
-          elseif($lastpage > 5 + ($adjacents * 2))
-          {
-          if($this->_page < 1 + ($adjacents * 2))       
-          {
-          for ($counter = 1; $counter < 4 + ($adjacents * 2); $counter++)
-          {
-          if ($counter == $this->_page)
-              $pagination.= "<span class='current'>$counter</span>";
-          else
-              $pagination.= "<a href='".$path."$this->_instance=$counter"."$ext'>$counter</a>";                   
-          }
-              $pagination.= "...";
-              $pagination.= "<a href='".$path."$this->_instance=$lpm1"."$ext'>$lpm1</a>";
-              $pagination.= "<a href='".$path."$this->_instance=$lastpage"."$ext'>$lastpage</a>";       
-          }
-          elseif($lastpage - ($adjacents * 2) > $this->_page && $this->_page > ($adjacents * 2))
-          {
-              $pagination.= "<a href='".$path."$this->_instance=1"."$ext'>1</a>";
-              $pagination.= "<a href='".$path."$this->_instance=2"."$ext'>2</a>";
-              $pagination.= "...";
-          for ($counter = $this->_page - $adjacents; $counter <= $this->_page + $adjacents; $counter++)
-          {
-          if ($counter == $this->_page)
-              $pagination.= "<span class='current'>$counter</span>";
-          else
-              $pagination.= "<a href='".$path."$this->_instance=$counter"."$ext'>$counter</a>";                   
-          }
-              $pagination.= "..";
-              $pagination.= "<a href='".$path."$this->_instance=$lpm1"."$ext'>$lpm1</a>";
-              $pagination.= "<a href='".$path."$this->_instance=$lastpage"."$ext'>$lastpage</a>";       
-          }
-          else
-          {
-              $pagination.= "<a href='".$path."$this->_instance=1"."$ext'>1</a>";
-              $pagination.= "<a href='".$path."$this->_instance=2"."$ext'>2</a>";
-              $pagination.= "..";
-          for ($counter = $lastpage - (2 + ($adjacents * 2)); $counter <= $lastpage; $counter++)
-          {
-          if ($counter == $this->_page)
-              $pagination.= "<span class='current'>$counter</span>";
-          else
-              $pagination.= "<a href='".$path."$this->_instance=$counter"."$ext'>$counter</a>";                   
-          }
-          }
-          }
-
-          if ($this->_page < $counter - 1)
-              $pagination.= "<a href='".$path."$this->_instance=$next"."$ext'>next »</a>";
-          else
-              $pagination.= "<span class='disabled'>next »</span>";
-              $pagination.= "</div>\n";       
-          }
-
-
-        return $pagination;
+            "require": {
+                "monolog/monolog": "1.2.*"
+            }
         }
-      }
+Мы просто констатируем, что наш проект требует пакета monolog/monolog, любой версии, начиная с 1.2.
 
+СИСТЕМНЫЕ ТРЕБОВАНИЯ.
+--------------------
+Composer требует PHP 5.3.2+ для работы. Также требуется несколько чувствительных параметров PHP и флагов компиляции, но инсталлятор предупредит вас о всех несовместимостях.
+Для установки пакетов из исходников вместо простых zip-архивов, вам понадобится git, svn или hg в зависимости от того под управлением какой VCS находится пакет.
+Composer поддерживает мультиплатформенность и стремится работать одинаково хорошо на Windows, Linux и OSX.
 
-index.php
----------
-       <?php
-        try {
+УСТАНОВКА НА - *NIX
+-------------------
+Скачивание исполняемых файлов
 
-          $pages = new Paginator('1','p');
+- локально
 
-          $stmt = $db->query('SELECT id FROM blog_posts');
+Чтобы получить Composer необходимо сделать 2 вещи. Первая - это установить Composer:
 
-          //pass number of records to
-          $pages->set_total($stmt->rowCount());
+        $ curl -sS https://getcomposer.org/installer | php
 
-          $stmt = $db->query('SELECT id, title, slug, description, created FROM blog_posts ORDER BY id DESC'.$pages->get_limit());
+Это просто проверит некоторые настройки PHP и затем скачает composer.phar в вашу рабочую директорию. Этот файл является исполняемым файлом Composer. Это PHAR (PHP-архив), который является архивным форматом для PHP и может быть запущен из командной строки.
 
-          while($row = $stmt->fetch()){
+Вы можете установить Composer в определенную директорию используя опцию --install-dir и передав целевой путь (это может быть абсолютный или относительный путь).
 
+        $ curl -sS https://getcomposer.org/installer | php -- --install-dir=bin
 
+- глобально
 
-          }
-          echo $pages->page_links();
+Вы можете разместить этот файл где хотите по вашему желанию. Если вы поместите его в PATH, то получите к нему глобальный доступ. На UNIX-системах вы даже можете сделать его исполняемым и исполнять его без помощи php.
 
-        } catch(PDOException $e) {
-            echo $e->getMessage();
-        }
-      ?>
+Вы можете запускать эти команды для доступа к Composer из любого места вашей системы:
 
+        $ curl -sS https://getcomposer.org/installer | php
+        $ mv composer.phar /usr/local/bin/composer
 
+если команды не работают из-за отсутствия разрешений, запустите их снова используя sudo.
+Затем, просто запустите composer вместо php composer.phar.
 
-css
-----
+УСТАНОВКА НА WINDOWS
+--------------------
+Используя инсталлятор.
 
-        /* PAGINATION */
+Это самый простой путь получить Composer и установить его на вашу машину.
 
-      .pagination {
-          clear: both;
-          padding-bottom: 10px;
-          padding-top: 10px;
-      }
-      .pagination a {
-          border: 1px solid #D5D5D5;
-          color: #666666;
-          font-size: 11px;
-          font-weight: bold;
-          height: 25px;
-          padding: 4px 8px;
-          text-decoration: none;
-        margin:2px;
-      }
-      .pagination a:hover, .pagination a:active {
-          background:#efefef;
-      }
-      .pagination span.current {
-          background-color: #687282;
-          border: 1px solid #D5D5D5;
-          color: #ffffff;
-          font-size: 11px;
-          font-weight: bold;
-          height: 25px;
-          padding: 4px 8px;
-          text-decoration: none;
-              margin:2px;
-      }
-      .pagination span.disabled {
-          border: 1px solid #EEEEEE;
-          color: #DDDDDD;
-          margin: 2px;
-          padding: 2px 5px;
-      }
+Скачайте и запустите инсталляционный файл Composer (https://getcomposer.org/Composer-Setup.exe), запустится установка последней версии Composer и настроит ваш PATH таким образом, что вы просто будете запускать Composer из любой директории в командной строке.
 
-Archives.Php
+Ручная установка.
+-----------------
+Перейдите в директорию PATH и выполните небольшой скрипт для скачивания composer.phar:
+
+        C:\Users\username> cd C:\bin
+        C:\bin> php -r "eval('?>'.file_get_contents('https://getcomposer.org/installer'));"
+
+если команды не работают, используйте для file_get_contents ссылку с http или включите опцию php_openssl.dll в php.ini.
+Создайте новый файл composer.bat рядом с composer.phar:
+
+        C:\bin>echo @php "%~dp0composer.phar" %*>composer.bat
+
+Закройте ваш текущий терминал. Протестируйте работу composer в новом терминале:
+
+        C:\Users\username>composer -V
+        Composer version 27d8904
+        C:\Users\username>
+
+ИСПОЛЬЗОВАНИЕ COMPOSER
+----------------------
+Для разрешения и скачивания зависимостей, используйте команду install.
+
+        $ php composer.phar install
+
+Если вы установили Composer глобально, используйте вместо этого:
+
+        $ composer install
+
+АВТОЗАГРУЗКА
 ------------
+Помимо скачивания библиотеки, Composer также подготавливает автозагрузочный файл, который способен автозагрузить все классы в каждой скачанной библиотеке.
+Чтобы использовать это, просто добавьте следующую строку в ваш код процесса загрузки:
 
-try {
+        require 'vendor/autoload.php';
 
-          $pages = new Paginator('5','p');
-          $month = $_GET['month'];
-          $year = $_GET['year'];
-
-          //set from and to dates
-          $from = date('Y-m-01 00:00:00', strtotime("$year-$month"));
-          $to = date('Y-m-31 23:59:59', strtotime("$year-$month"));
+Теперь вы можете использовать monolog.
 
 
-                    //pass number of records to
-                    $pages->set_total($stmt->rowCount());
+Установка Laravel
+=================
 
-          $stmt = $db->prepare('SELECT * FROM blog_posts WHERE created >= :from AND created <= :to ORDER BY id DESC '.$pages->get_limit());
-          $stmt->execute(array(
-            ':from' => $from,
-            ':to' => $to
-          ));
+Laravel использует Composer для управления зависимостями. Поэтому сначала установите Composer, а затем Laravel.
 
 
-        echo $pages->page_links("a-$month-$year&");
+С помощью установщика Laravel
+-----------------------------
+Сначала загрузите установщик Laravel с помощью Composer.
 
-Catpost.Php
------------
-    try {
+        composer global require "laravel/installer=~1.1"
 
-        $pages = new Paginator('1','p');
-        $stmt = $db->prepare('SELECT blog_posts.id FROM blog_posts, blog_post_cats WHERE blog_posts.id = blog_post_cats.postID AND blog_post_cats.catID = :catID');
-        $stmt->execute(array(':catID' => $row['catID']));
+Не забудьте поместить каталог ~/.composer/vendor/bin в вашу переменную PATH, чтобы исполняемый файл laravel мог быть найден вашей системой.
 
-        //pass number of records to
-        $pages->set_total($stmt->rowCount());
+После установки простая команда laravel new произведёт установку свежего Laravel в указанный каталог. Например, laravel new blog создаст каталог с именем blog, содержащий свежий Laravel со всеми установленными зависимостями. Этот способ установки намного быстрее, чем установка с помощью Composer:
 
-        $stmt = $db->prepare('
-          SELECT 
-            *
-          FROM 
-            blog_posts,
-            blog_post_cats
-          WHERE
-             blog_posts.id = blog_post_cats.postID
-             AND blog_post_cats.catID = :catID
-          ORDER BY 
-            created DESC 
-          '.$pages->get_limit());
-          );
+        laravel new blog
+
+С помощью создания проекта Composer
+-----------------------------------
+Вы также можете установить Laravel с помощью команды create-project:
+
+        composer create-project laravel/laravel {directory} "~5.0.0" --prefer-dist
+
+После установки необходимо обновить пакеты до последних версий. Сначала удалите файл {directory}/vendor/compiled.php, затем смените текущий каталог на {directory} и выполните команду composer update.
+
+Преднастройки
+-------------
+Laravel устанавливается с готовыми преднастройками для регистрации и авторизации пользователей. Если хотите удалить их, используйте Artisan-команду fresh:
+
+        php artisan fresh
+Требования к серверу
+--------------------
+У Laravel есть несколько системных требований:
+
+        PHP >= 5.4, PHP < 7
+        MCrypt (расширение для PHP)
+        OpenSSL (расширение для PHP)
+        Mbstring (расширение для PHP)
+        Tokenizer (расширение для PHP)
+
+Для PHP 5.5 в некоторых дистрибутивах ОС может потребоваться вручную установить расширение PHP JSON. В Ubuntu это можно сделать командой apt-get install php5-json.
+
+Настройка
+---------
+Первое, что необходимо сделать после установки Laravel, — задать случайную строку в качестве ключа приложения. Если вы установили Laravel с помощью Composer, вероятно, этот ключ уже был задан для вас командой key:generate.
+
+Обычно эта строка должна быть длиной 32 символа. Ключ может быть задан в файле среды .env. Если ключ приложения не задан, данные пользовательских сессий и другие шифрованные данные не будут защищены!
+
+Laravel практически не требует других начальных настроек — вы можете сразу начинать разработку. Однако вам может пригодиться файл config/app.php и его документация — он содержит несколько настроек вроде timezone и locale, которые вы можете изменить для вашего приложения.
+
+После установки Laravel вам также надо настроить локальную среду.
+
+Никогда не оставляйте параметр app.debug со значением true в продакшне.
 
 
-          echo $pages->page_links('c-'.$_GET['id'].'&');
+Создание проекта
+================
+
+Создание пустого приложения — это выполнение всего лишь одной команды.
+
+        composer create-project laravel/laravel lara --prefer-dist
+
+Это создаст новый проект в папке /home/www/lara, основанный на репозитории laravel/laravel. Обо всех зависимостях Laravel’а за вас позаботится Composer.
+
+        > Illuminate\Foundation\ComposerScripts::postUpdate
+        > php artisan optimize
+        Generating optimized class loader
+        > php artisan key:generate
+        Application key [base64:cYI7guydCo2TIXLB+1cWZcStHflixXtXIKXXtNRfXrs=] set successfully.
+
+Для Apache настройка виртуального хоста:
+----------------------------------------
+В XAMPP нужно настроить папку public в файле xampp\apache\conf\extra\httpd-vhosts.conf
+
+        <VirtualHost lara.com:80>
+            ServerAdmin admin@lara.com
+            DocumentRoot "C:/xampp/htdocs/lara/public"
+            ServerName lara.com
+            ServerAlias www.lara.com
+            ErrorLog "logs/lara-error.log"
+            CustomLog "logs/lara-access.log" common
+            <Directory "C:/xampp/htdocs/lara/public">
+                AllowOverride All
+                    Order allow,deny
+                Allow from all
+            </Directory>
+        </VirtualHost>
+
+
+UNIX
+====
+        sudo subl /etc/apache2/sites-available/001-lara.conf
+
+        <VirtualHost lara.com:80>
+            # The ServerName directive sets the request scheme, hostname and port that
+            # the server uses to identify itself. This is used when creatinUNIXg
+            # redirection URLs. In the context of virtual hosts, the ServerName
+            # specifies what hostname must appear in the request's Host: header to
+            # match this virtual host. For the default virtual host (this file) this
+            # value is not decisive as it is used as a last resort host regardless.
+            # However, you must set it for any further virtual host explicitly.
+
+            ServerName lara.com
+
+            ServerAdmin webmaster@localhost
+            DocumentRoot /home/janus/www/lara/public
+
+            Options Indexes FollowSymLinks
+
+            <Directory '/home/janus/www/lara/public/'>
+                Options Indexes FollowSymLinks
+                AllowOverride All
+                Require all granted
+            </Directory>
+            
+
+            # Available loglevels: trace8, ..., trace1, debug, info, notice, warn,
+            # error, crit, alert, emerg.
+            # It is also possible to configure the loglevel for particular
+            # modules, e.g.
+            #LogLevel info ssl:warn
+
+            ErrorLog ${APACHE_LOG_DIR}/lara-error.log
+            CustomLog ${APACHE_LOG_DIR}/lara-access.log combined
+
+            # For most configuration files from conf-available/, which are
+            # enabled or disabled at a global level, it is possible to
+            # include a line for only one particular virtual host. For example the
+            # following line enables the CGI configuration for this host only
+            # after it has been globally disabled with "a2disconf".
+            #Include conf-available/serve-cgi-bin.conf
+        </VirtualHost>
+
+
+hosts
+------
+        127.0.0.1   localhost
+        127.0.1.1   janus-P55-US3L
+
+        127.0.0.2    blog.com www.blog.com
+
+        127.0.1.20   lara.com
+
+        # The following lines are desirable for IPv6 capable hosts
+        ::1     ip6-localhost ip6-loopback
+        fe00::0 ip6-localnet
+        ff00::0 ip6-mcastprefix
+        ff02::1 ip6-allnodes
+        ff02::2 ip6-allrouters
+
+debian
+------
+    sudo a2ensite 001-lara
+    Enabling site 001-lara.
+    To activate the new configuration, you need to run:
+      service apache2 reload
+    janus@janus-P55-US3L ~/www $ sudo service apache2 reload
+     * Reloading web server apache2                                                                   
+
+
+Настройки среды
+---------------
+Часто необходимо иметь разные значения для различных настроек в зависимости от среды, в которой выполняется приложение. Например, вы можете захотеть использовать разные драйвера кэша на локальном и продакшн-сервере. 
+
+Для этого в Laravel используется PHP-библиотека DotEnv от Ванса Лукаса. В свежей инсталляции Laravel в корне вашего приложения будет файл .env.example. Если вы установили Laravel с помощью Composer, этот файл будет автоматически переименован в .env, иначе вам следует сделать это вручную.
+
+Все перечисленные в этом файле переменные будут загружены в супер-глобальную переменную PHP $_ENV, когда ваше приложение получит запрос. Вы можете использовать функцию env для получения значений из этих переменных. На самом деле, если вы просмотрите файлы настроек Laravel, вы заметите несколько параметров, уже использующих эту функцию.
+
+Не бойтесь изменять ваши переменные среды так, как необходимо для вашего локального сервера, а также для среды продакшна. Но ваш файл .env не должен быть включён в систему контроля версий вашего приложения, так как каждому использующему ваше приложение разработчику/серверу может потребоваться разная настройка среды.
+
+Если вы работаете в команде, то, возможно, вам захочется и дальше поставлять файл .env.example с вашим приложением. Поместив примеры значений в этот файл, вы дадите понять другим разработчикам, какие переменные среды необходимы для запуска вашего приложения.
+
+.env
+----
+        APP_ENV=local
+        APP_DEBUG=true
+        APP_KEY=base64:cYI7guydCo2TIXLB+1cWZcStHflixXtXIKXXtNRfXrs=
+        APP_URL=http://localhost
+
+        DB_CONNECTION=mysql
+        DB_HOST=127.0.0.1
+        DB_PORT=3306
+        DB_DATABASE=homestead
+        DB_USERNAME=homestead
+        DB_PASSWORD=secret
+
+        CACHE_DRIVER=file
+        SESSION_DRIVER=file
+        QUEUE_DRIVER=sync
+
+        REDIS_HOST=127.0.0.1
+        REDIS_PASSWORD=null
+        REDIS_PORT=6379
+
+        MAIL_DRIVER=smtp
+        MAIL_HOST=mailtrap.io
+        MAIL_PORT=2525
+        MAIL_USERNAME=null
+        MAIL_PASSWORD=null
+        MAIL_ENCRYPTION=null
+
+Красивые URL
+============
+Apache
+------
+Фреймворк поставляется с файлом public/.htaccess, который используется для реализации URL-адресов без index.php. Если вы используете Apache для работы вашего Laravel-приложения, убедитесь, что включён модуль mod_rewrite.
+
+        <IfModule mod_rewrite.c>
+            <IfModule mod_negotiation.c>
+                Options -MultiViews
+            </IfModule>
+
+            RewriteEngine On
+
+            # Redirect Trailing Slashes If Not A Folder...
+            RewriteCond %{REQUEST_FILENAME} !-d
+            RewriteRule ^(.*)/$ /$1 [L,R=301]
+
+            # Handle Front Controller...
+            RewriteCond %{REQUEST_FILENAME} !-d
+            RewriteCond %{REQUEST_FILENAME} !-f
+            RewriteRule ^ index.php [L]
+
+            # Handle Authorization Header
+            RewriteCond %{HTTP:Authorization} .
+            RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+        </IfModule>
+
+Если поставляемый с Laravel файл .htaccess не работает с вашей инсталляцией Apache, попробуйте этот:
+
+        Options +FollowSymLinks
+        RewriteEngine On
+
+        RewriteCond %{REQUEST_FILENAME} !-d
+        RewriteCond %{REQUEST_FILENAME} !-f
+        RewriteRule ^ index.php [L]
+
+Если ваш хостинг не разрешает опцию FollowSymlinks, попробуйте заменить её на Options +SymLinksIfOwnerMatch.
+
+Nginx
+-----
+В Nginx следующая директива в настройках вашего сайта позволит использовать «красивые» URL-адреса:
+
+        location / {
+          try_files $uri $uri/ /index.php?$query_string;
+        }
+
+Права доступа
+=============
+Для Laravel может потребоваться, чтобы у веб-сервера были права на запись в папки storage и vendor.
+
+        $ chmod 777 logs
+
+        $ chmod 777 -R framework
+
+
+Структура обычного Laravel-приложения
+=====================================
+
+- /app
+В этой папке и ее подпапках будет сосредоточена вся логика конкретно вашего приложения.
+
+- /bootstrap
+Здесь содержатся бутстрап (bootstrap)-файлы приложения. Под бутстрапом обычно подразумевается какая-либо стартовая инициализация приложение. В подавляющем большинстве случаев трогать файлы в этой папке нет необходимости.
+
+- /public
+Как говорит само название — это «публичная» папка вашего проекта. Она содержит единственную точку входа в ваше приложение (index.php) а также все дополнительные файлы, которые должны быть доступны из-вне любому посетителю вашего сайта, будь то стили, JavaScript-файлы и прочее. Веб-сервер «смотрит» именно в эту папку, что исключает возможности какому-то хакеру получить содержимое какого-либо файла допустим из папки app, чтобы увидеть серверную логику.
+
+- /vendor
+«Сердце» вашего приложения. Эта папка содержит все файлы самого фреймворка, а также каких-либо дополнительных компонентов (называемых также пакетами), устанавливаемых при помощи Composer. Папка vendor является стандартной для любого приложения, созданного при помощи Composer, и, в частности, Laravel. Это то, на что опирается все ваше приложение. Файлы в этой папке никогда не стоит править — это считается очень плохим и грязным тоном, не говоря о непрактичности таких правок — они будут затерты при ближайшем обновлении фреймворка или конкретного компонента..
+
+artisan
+-------
+Artisan — это консольная версия Laravel-приложения. Позволяет запускать различные обслуживающие команды (создание миграций, просмотр маршрутов приложения и так далее) из консоли, но помимо этого является и расширяемым средством: можно написать свои произвольные обслуживающие команды, что большинству разработчиков больше известно как cron-скрипты.
+
+composer.json
+-------------
+Файл настроек Composer. Наибольший интерес в нем представляет секция «require», при помощи которой мы можем добавлять любые дополнительные компоненты в приложение, которые нам потребуется. 
+
+Директория app
+--------------
+Здесь находится логика приложения.
+Папка app подразумевает хранение в ней всех моделей приложения.
+
+Директория config
+-----------------
+В папке config находится конфигурация приложения. Она содержит разные конфигурационные файлы, которые могут использоваться как самим фреймворком, так и нашим приложением. Имя каждого файла вполне однозначно говорит о конфигурируемой им «области» приложения, а каждый параметр внутри подробно прокомментирован. Так что будет полезно иметь представление о возможных опциях приложения, будь то драйвер базы данных или сессии и так далее. Некоторые файлы правятся один раз, и больше никогда не трогаются (например настройки соединения с базой данных), другие же могут периодически подвергаться изменением по ходу разработки приложения. Чаще всего приходится править файл config/app.php.
+
+Директория database
+-------------------
+находятся: миграции, factories и сиды.
+
+Папка app/Http/Controllers 
+--------------------------
+подразумевает хранение в ней всех контроллеров приложения. Все классы в этой папке доступны автозагрузчику.
+
+В папке resources/lang 
+----------------------
+содержатся локализационные файлы приложения, разделенные по «категориям». Например подпапку uk для локализации.
+
+Папка storage/framework
+-----------------------
+как ясно из названия, является хранилищем приложения. Здесь содержится кэш (если, конечно, в качестве драйвера для кэша указаны файлы), логи, сессии (опять же, если драйвер — файлы). Если вы работаете над проектом используя какую-либо VCS (version control system), эту папку следует добавлять в игнор.
+
+Папка resources/views. 
+---------------------
+Она будет содержать все наши шаблоны для вывода данных пользователю.
+
+
+Маршрутизация
+=============
+При написании своего приложения, будь то на Laravel, другом фреймворке, или же на чистом PHP, важно иметь четкое представление о таком понятии, как маршрутизация запросов.
+
+Маршрутизация — это процесс определения, какую логику приложения стоит выполнить при том или ином запросе от пользователя.
+
+Первоначальную маршрутизацию выполняет сам веб-сервер: на основе запроса (например GET-запроса) он определяет, какой файл выдать пользователю, или же в случае использования PHP — какой скрипт выполнить. Изначально, еще до появления серверных языков, таких как PHP, роль веб-сервера была проста: просто выдавать запрошенный файл. К примеру, если пользователь запросил http://domain.com/index.html — выдать файл index.html, находящийся в корневой папке веб-сервера. Аналогично с другими файлами.
+
+С появлением серверных языков, контент сайтов стал динамическим,  и вместо того, чтобы возвращать сам запрашиваемый файл (к примеру index.php), сервер выполняет его и возвращает пользователю уже то, что выдаст этот скрипт.
+
+По-началу, для каждого «маршрута» создавался отдельный скрипт, выполняющий свою логику. Это ситуация нескольких точек входа в приложение. подход: для каждого отдельного раздела сайта — свой скрипт. У такого подхода есть один большой минус: даже если есть какой-то центральный функционал приложения, инициализация этого приложения повторялась в каждом скрипте. Понятное дело, что если приходилось изменять инициализацию, это приходилось делать в каждой точке входа.
+
+Поэтому, в результате эволюции и усложнения веб-приложений, многие пришли к использованию единой точки входа в приложение. Создается один файл, в большинстве случаев index.php, обрабатывающий все запросы, точнее запросы обрабатываются конечно же не в самом этом файле — это просто точка входа. Здесь происходит инициализация приложения, будь то какой-то отдельный класс Application, или же отдельные функции, если не используется ООП-подход. И уже в этом приложении происходит дальнейшая маршрутизация запроса: приложение анализирует сделанный пользователем запрос и выполняет соответствующую логику, распределенную, если это MVC, на контроллеры.
+
+В результате все той же эволюции, как и во всех языках программирования, на PHP стали появляться различные фреймворки, или, если переводить это слово (framework), — каркасы для написания приложений, содержащие в себе готовый для использования функционал для реализации самых различных задач. И пожалуй каждый фреймворк предоставляет возможность настроить маршрутизацию различными способами. Некоторые фреймворки в этом плане являются «навязчивыми», буквально навязывая свои маршруты, другие же предоставляют большую гибкость в настройке. Одним из многих преимуществ Laravel является полная свобода в выборе предпочитаемых маршрутов и удобство настройки.
+
+Маршрутизация в Laravel
+-----------------------
+Laravel предоставляет полную свободу выбора в плане маршрутов. Помимо этого, делается это очень удобно, и более того, поддерживается несколько способов создавать маршруты.
+
+Большинство маршрутов (routes) вашего приложения будут определены в файле app/Http/routes.php, который загружается классом App\Providers\RouteServiceProvider. В Laravel, простейший маршрут принимает URI (путь) и функцию-замыкание.
+
+<?php
+
+/*
+|--------------------------------------------------------------------------
+| Application Routes
+|--------------------------------------------------------------------------
+|
+| Here is where you can register all of the routes for an application.
+| It's a breeze. Simply tell Laravel the URIs it should respond to
+| and give it the controller to call when that URI is requested.
+|
+*/
+
+Route::get('/', function () {
+    return view('welcome');
+});
+
+
+Это — простейшая форма определения маршрута, используя замыкание. Как можно увидеть, для определения маршрута используется фасад Route (пусть слово фасад вас не пугает, для простоты воспринимайте пока это как статический класс.
+
+Формально, любой HTTP запрос состоит из нескольких частей:
+----------------------------------------------------------
+URL
+---
+Это запрашиваемый «путь». В большинстве случаев многими под маршрутом подразумевается именно этот URL. Примеры url’ов: «/», «/news» и т.д.
+Метод запроса
+-------------
+Каждый запрос к веб-серверу делается с использованием одного из методов. Наиболее распространены методы GET и POST, они поддерживаются всеми броузерами. Однако существуют и более специфичные методы, такие, как например PUT или DELETE. Таким образом важно понимать, что метод запроса является частью маршрута. Ведь в зависимости от него, по одному и тому же URL’у может выполняться совершенно разная логика. К примеру, запрос «GET HTTP/1.0 /news/1» служит для получение новости №1. В то время как запрос «DELETE HTTP/1.0 /news/1» служит для удаления той же новости. URL один, а действия разные. Laravel позволяется создавать маршруты, учитывая метод запроса.
+Необязательное тело запроса.
+----------------------------
+Используется не со всеми методами. Как правило тело запроса присутствует при использовании методов POST и PUT. Частью маршрута не является, и это тело используется уже внутри обработчика маршрута.
+
+Простейший GET-маршрут
+----------------------
+    Route::get('/', function()
+    {
+      return 'Hello World';
+    });
+
+Другие простейшие маршруты
+
+    Route::post('foo/bar', function()
+    {
+      return 'Hello World';
+    });
+
+    Route::put('foo/bar', function()
+    {
+      //
+    });
+
+    Route::delete('foo/bar', function()
+    {
+      //
+    });
+
+Регистрация маршрута для нескольких типов запросов
+--------------------------------------------------
+Иногда можно объединять методы в один маршрут. К примеру, если поведение приложение по определенному URL’у не зависит от используемого метода. Для создания подобных маршрутов у фасада Route есть два метода:
+    
+    // Создание маршрута по URL'у "/" срабатывающему как
+    // при методе GET, так и POST
+    Route::match(['get', 'post'], '/', function()
+    {
+      return 'Hello World';
+    });
+
+Регистрация маршрута для любого типа HTTP-запроса
+    
+    // Создание маршрута по URL'у "/", срабатывающему при
+    // любом методе запроса
+    Route::any('foo', function()
+    {
+      return 'Hello World';
+    });
+
+Вам часто понадобится генерировать URL к какому-либо маршруту — для этого используется метод url():
+
+    $url = url('foo');
+
+Параметры маршрутов
+--------------------
+вы можете захватывать сегменты URI запроса в вашем маршруте.
+
+Базовый параметр маршрута
+
+        Route::get('user/{id}', function($id)
+        {
+          return 'User '.$id;
+        });
+Параметры маршрута не могут содержать символ -. Используйте вместо него нижнее подчёркивание _.
+
+Необязательные параметры маршрута
+---------------------------------
+        Route::get('user/{name?}', function($name = null)
+        {
+          return $name;
+        });
+Необязательные параметры со значением по умолчанию
+--------------------------------------------------
+        Route::get('user/{name?}', function($name = 'John')
+        {
+          return $name;
+        });
+
+
+Представления
+=============
+
+Представления (views) содержат HTML-код, передаваемый вашим приложением. Это удобный способ разделения бизнес-логики и логики отображения информации. Представления находятся в каталоге resources/views.
+
+Простое представление выглядит примерно так:
+--------------------------------------------
+
+       <div class="container">
+            <div class="content">
+                <div class="title">Laravel 5</div>
+            </div>
+        </div>
+
+greeting.blade.php
+------------------
+        <!-- Представление resources/views/greeting.blade.php -->
+
+        <body>
+            <div class="container">
+                <div class="content">
+                    <h1 class='title'>Привет, <?php echo $name; ?></h1>
+                </div>
+            </div>
+        </body>
+
+Это представление можно вернуть в браузер примерно так:
+
+        Route::get('/hay', function () {
+            return view('greeting', ['name' => 'Janus']);
+        });
+
+Как вы можете заметить, первый параметр, переданный вспомогательной функции view, соответствует имени файла представления в каталоге resources/views. Вторым параметром, переданным функции, является массив данных, которые будут доступны для представления.
+
+Конечно, представления могут быть и в поддиректориях resources/views. Например, если ваше представление сохранено в resources/views/hello/greeting.blade.php, оно должно быть возвращено вот так:
+
+        Route::get('/hell', function () {
+            $data = ['name' => 'Janus Nic!'];
+            return view('hello.greeting', $data);
+        });
+
+Передача данных в представление
+-------------------------------
+        Используя стандартный подход
+
+        Route::get('/hell1', function () {
+            // Используя стандартный подход
+            $view = view('greeting')->with('name', 'Еще раз Janus Nic!');
+            return $view;
+        });
+
+
+Используя "магические" методы
+-----------------------------
+        Route::get('/hell2', function () {
+            // Используя "магические" методы
+            $view = view('greeting')->withName('И еще раз Janus Nic!');
+
+            return $view;
+        });
+
+
+Вы также можете передать массив данных в качестве второго параметра в функцию view:
+
+    $view = view('greetings', $data);
+
+Передавая данные таким способом, $data должен быть массивом с парами ключ/значение. Теперь эти данные можно получить в представлении, используя соответствующий ключ, подобно {{$key}} (предполагается, что $data[key] существует).
+
+ШАБЛОНИЗАТОР BLADE
+==================
+
+ШАБЛОНЫ BLADE
+-------------
+Blade - простой, но мощный шаблонизатор, входящий в состав Laravel. Blade основан на концепции наследования шаблонов и секциях. Все шаблоны Blade должны иметь расширение .blade.php.
+
