@@ -1,45 +1,41 @@
-<!DOCTYPE html>
-<html>
-    <head>
-        <title>Laravel</title>
+@extends('layouts.master')
 
-        <link href="https://fonts.googleapis.com/css?family=Lato:100" rel="stylesheet" type="text/css">
+@section('title', 'Заголовок страницы')
 
-        <style>
-            html, body {
-                height: 100%;
-            }
+@section('sidebar')
 
-            body {
-                margin: 0;
-                padding: 0;
-                width: 100%;
-                display: table;
-                font-weight: 100;
-                font-family: 'Lato';
-            }
+    @parent
 
-            .container {
-                text-align: center;
-                display: table-cell;
-                vertical-align: middle;
-            }
+    <p>Этот элемент будет добавлен к главному сайдбару.</p>
+    Текущее время эпохи UNIX: {{ time() }}.
+@stop
 
-            .content {
-                text-align: center;
-                display: inline-block;
-            }
-
-            .title {
-                font-size: 96px;
-            }
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <div class="content">
+@section('content')
+    <div class="content">
                 <div class="title">Laravel 5</div>
-            </div>
-        </div>
-    </body>
-</html>
+    </div>
+
+    <p>Это - содержимое страницы.</p>
+    <p>Иногда вам нужно вывести переменную, которая может быть определена, а может быть нет. 
+    </p>
+    Например:
+
+    {{ isset($name) ? $name : 'Default' }}
+<p>
+    Но вам не обязательно писать тернарный оператор, Blade позволяет записать это короче:
+</p>
+    {{ $name or 'Default' }}
+    @{{ Этот текст не будет обрабатываться шаблонизатором Blade }}
+
+        @if (count($records) === 1)
+            Здесь есть одна запись!
+        @elseif (count($records) > 1)
+            Здесь есть много записей!
+        @else
+            Здесь нет записей!
+        @endif
+
+        @unless (Auth::check())
+            Вы не вошли в систему.
+        @endunless
+@stop

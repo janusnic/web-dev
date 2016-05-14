@@ -10,10 +10,17 @@
 | and give it the controller to call when that URI is requested.
 |
 */
-
+/*
 Route::get('/', function () {
-    return view('welcome');
+    return view('welcome',['records'=>0]);
 });
+*/
+Route::get('/', ['as' => 'posts', 'uses' => 'PostController@index']);
+
+Route::get('/hey', 'GreetingController@index');
+
+Route::resource('posts', 'PostController');
+
 Route::get('/hay', function () {
     return view('greeting', ['name' => 'Janus']);
 });
