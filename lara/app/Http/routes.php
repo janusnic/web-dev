@@ -21,6 +21,12 @@ Route::get('/hey', 'GreetingController@index');
 
 Route::resource('posts', 'PostController');
 
+Route::get('blog', 'BlogController@index');            // При запросе к http://lara.com/blog будет вызван метод index()
+                                                        // Класса BlogController
+
+Route::get('blog/{slug}', 'BlogController@showPost');  // При запросе к http://lara.com/blog/что-нибудь будет вызва метод showPost()
+                                                        // Класса BlogController
+
 Route::get('/hay', function () {
     return view('greeting', ['name' => 'Janus']);
 });
