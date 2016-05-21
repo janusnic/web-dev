@@ -10,43 +10,25 @@
 | and give it the controller to call when that URI is requested.
 |
 */
-/*
-Route::get('/', function () {
-    return view('welcome',['records'=>0]);
-});
-*/
+
 Route::get('/', ['as' => 'posts', 'uses' => 'PostController@index']);
 
-Route::get('/hey', 'GreetingController@index');
+Route::get('blog/{slug}', 'BlogController@showPost');  
 
 Route::resource('posts', 'PostController');
+Route::resource('blog', 'BlogController');
 
-Route::get('blog', 'BlogController@index');            // При запросе к http://lara.com/blog будет вызван метод index()
-                                                        // Класса BlogController
 
-Route::get('blog/{slug}', 'BlogController@showPost');  // При запросе к http://lara.com/blog/что-нибудь будет вызва метод showPost()
-                                                        // Класса BlogController
+Route::post('admin/blog/{id}/edit', 'admin\BlogController@edit');
+Route::post('admin/blog/{id}/update', 'admin\BlogController@update');
 
-Route::get('/hay', function () {
-    return view('greeting', ['name' => 'Janus']);
+
+Route::group(['prefix'=>'admin'],function(){
+    Route::any('/','admin\DashboardController@index');
+    Route::resource('home', 'admin\DashboardController');
+    Route::resource('blog','admin\BlogController');
 });
 
-Route::get('/hell', function () {
-    $data = ['name' => 'Janus Nic!'];
-    return view('hello.greeting', $data);
-});
 
-Route::get('/hell1', function () {
-    // Используя стандартный подход
-    $view = view('greeting')->with('name', 'Еще раз Janus Nic!');
-    return $view;
-});
-
-Route::get('/hell2', function () {
-    // Используя "магические" методы
-    $view = view('greeting')->withName('И еще раз Janus Nic!');
-
-    return $view;
-});
 
 
