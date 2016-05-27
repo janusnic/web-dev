@@ -17,7 +17,7 @@ Route::get('blog/{slug}', 'BlogController@showPost');
 
 Route::resource('posts', 'PostController');
 Route::resource('blog', 'BlogController');
-
+Route::resource('category', 'CategoryController');
 
 Route::post('admin/blog/{id}/edit', 'admin\BlogController@edit');
 Route::post('admin/blog/{id}/update', 'admin\BlogController@update');
@@ -26,6 +26,8 @@ Route::post('admin/blog/{id}/update', 'admin\BlogController@update');
 Route::group(['prefix'=>'admin'],function(){
     Route::any('/','admin\DashboardController@index');
     Route::resource('home', 'admin\DashboardController');
+    Route::resource('category','admin\CategoryController');
+    Route::resource('tag','admin\TagController');
     Route::resource('blog','admin\BlogController');
 });
 
