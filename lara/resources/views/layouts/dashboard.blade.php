@@ -247,20 +247,17 @@
                         <li {{ (Request::is('/admin') ? 'class="active"' : '') }}>
                             <a href="{{ url ('admin') }}"><i class="fa fa-dashboard fa-fw"></i> Dashboard</a>
                         </li>
-                        <li>
-                            <a href="#"><i class="fa fa-files-o fa-fw"></i> Categories<span class="fa arrow"></span></a>
-                            <ul class="nav nav-second-level">
-                                <li {{ (Request::is('*category') ? 'class="active"' : '') }}>
-                                    <a href="{{ url ('/admin/category') }}">All Categories</a>
-                                </li>
-                                <li>
-                                    <a href="{{ url ('/admin/category/create') }}">Add Category</a>
-                                </li>
-                            </ul>
+                        
+                         <li {{ (Request::is('*categories') ? 'class="active"' : '') }}>
+                            <a href="{{ url ('/admin/categories') }}"><i class="fa fa-bar-chart-o fa-fw"></i> Categories</a>
                             <!-- /.nav-second-level -->
                         </li>
-                        <li {{ (Request::is('*tag') ? 'class="active"' : '') }}>
-                            <a href="{{ url ('/admin/tag') }}"><i class="fa fa-bar-chart-o fa-fw"></i> Tags</a>
+                        <li {{ (Request::is('*tags') ? 'class="active"' : '') }}>
+                            <a href="{{ url ('/admin/tags') }}"><i class="fa fa-bar-chart-o fa-fw"></i> Tags</a>
+                            <!-- /.nav-second-level -->
+                        </li>
+                        <li {{ (Request::is('*articles') ? 'class="active"' : '') }}>
+                            <a href="{{ url ('/admin/articles') }}"><i class="fa fa-bar-chart-o fa-fw"></i> Articles</a>
                             <!-- /.nav-second-level -->
                         </li>
                         <li {{ (Request::is('*tables') ? 'class="active"' : '') }}>

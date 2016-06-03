@@ -18,13 +18,6 @@ class CreateTagsTable extends Migration
             $table->timestamps();
         });
 
-         DB::table('tags')->insert([
-            'tag' => "Pink"
-            ]);
-
-        DB::table('tags')->insert([
-            'tag' => "T-Shirt"
-            ]);
     }
 
     /**

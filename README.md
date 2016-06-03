@@ -1,636 +1,282 @@
-# web-dev unit_17
+# web-dev unit_19
 
-Admin Laravel
-=============
-
-http://startlaravel.com/
-
-https://github.com/start-laravel/sb-admin-laravel-5
+Изменение структуры таблиц
+==========================
+    php artisan make:migration add_slug_to_tags --table=tags
 
 
-Dashboard
-----------
-    php artisan make:controller admin/DashboardController
-
-    Controller created successfully.
-
-
-admin/DashboardController
--------------------------
-    <?php
-
-    namespace App\Http\Controllers\admin;
-
-    use Illuminate\Http\Request;
-
-    use App\Http\Requests;
-    use App\Http\Controllers\Controller;
-
-    class DashboardController extends Controller
+    class AddSlugToTags extends Migration
     {
-        //
-    }
-
-admin/BlogController
---------------------
-    php artisan make:controller admin/BlogController
-
-    Controller created successfully.
-
-    <?php
-
-    namespace App\Http\Controllers\admin;
-
-    use Illuminate\Http\Request;
-
-    use App\Http\Requests;
-    use App\Http\Controllers\Controller;
-
-    class BlogController extends Controller
-    {
-        //
-    }
-
-
-Application Routes
-------------------
-      <?php
-
-      Route::get('/', ['as' => 'posts', 'uses' => 'PostController@index']);
-
-      Route::get('blog/{slug}', 'BlogController@showPost');  
-
-      Route::resource('posts', 'PostController');
-      Route::resource('blog', 'BlogController');
-
-      Route::group(['prefix'=>'admin'],function(){
-          Route::any('/','admin\DashboardController@index');
-          Route::resource('home', 'admin\DashboardController');
-          Route::resource('blog','admin\BlogController');
-      });
-
-
-
-DashboardController
--------------------
-    <?php
-
-    namespace App\Http\Controllers\admin;
-
-    use Illuminate\Http\Request;
-
-    use App\Http\Requests;
-    use App\Http\Controllers\Controller;
-    use Illuminate\View\View;
-
-    class DashboardController extends Controller
-    {
-        
-        public function index()
-        {
-            return view('admin.home');
-        }
-    }
-
-
-config/blog.php
-----------------
-      <?php
-      return [
-          'title' => 'Janus Blog',
-          'posts_per_page' => 5,
-          'admin_posts_per_page' => 10
-      ];
-
-Category
-========
-Для создания модели выполним:
-
-    $ php artisan make:model --migration Category
-
-    Model created successfully.
-    Created Migration: 2016_05_27_080310_create_categories_table
-
-
-Добавляем нужные нам поля:
---------------------------
-файл database/migrations/2016_05_27_080310_create_categories_table.php
-
-    public function up()
-    {
-        Schema::create('categories', function (Blueprint $table) {
-            $table->increments('id');
-            $table->string('title');
-            $table->string('slug')->unique();
-            $table->integer('parent_id')->default(0);
-            $table->string('seo_title');
-            $table->string('seo_key');
-            $table->string('seo_desc');
-            $table->timestamps();
-        });
-    }
-
-
-Создаем таблицы в БД:
----------------------
-    php artisan migrate
-
-    Migrated: 2016_05_27_080310_create_categories_table
-
-
-Генерируем контроллер:
-----------------------
-
-CategoryController
-
-    php artisan make:controller CategoryController
-
-    Controller created successfully.
-
-admin/CategoryController
-
-    php artisan make:controller admin/CategoryController
-
-    Controller created successfully.
-
-
-Добавляем маршрут в app/Http/routes.php
----------------------------------------
-
-    <?php
-
-    Route::get('/', ['as' => 'posts', 'uses' => 'PostController@index']);
-
-    Route::get('blog/{slug}', 'BlogController@showPost');  
-
-    Route::resource('posts', 'PostController');
-    Route::resource('blog', 'BlogController');
-    Route::resource('category', 'CategoryController');
-
-    Route::group(['prefix'=>'admin'],function(){
-        Route::any('/','admin\DashboardController@index');
-        Route::resource('home', 'admin\DashboardController');
-        Route::resource('category','admin\CategoryController');
-        Route::resource('blog','admin\BlogController');
-    });
-
-
-config/blog.php
-----------------
-
-      <?php
-      return [
-          'title' => 'Janus Blog',
-          'posts_per_page' => 5,
-          'admin_posts_per_page' => 10,
-          'admin_title'=>'Admin Dashboard'
-      ];
-
-
-В контроллере создаем основные методы: 
---------------------------------------
-
-    <?php
-
-    namespace App\Http\Controllers\admin;
-
-    use Illuminate\Http\Request;
-
-    use App\Category;
-
-    use App\Http\Requests;
-    use App\Http\Controllers\Controller;
-
-    class CategoryController extends Controller
-    {
-
-        public function index()
-        {
-         
-        $categories = Category::orderBy('id', 'DESC')->paginate(config('blog.admin_posts_per_page'));
-            return view('admin.content.category.index', compact('categories')); 
-
-        }
-
-        public function create()
-        {
-            $category = new Category;
-            return view('admin.content.category.create', compact('category'));
-        }
-        
-        public function store(Request $request)
-        {
-            Category::create($request->all());
-            return redirect('/admin/category');
-        }
-        
-        public function show($id)
-        {
-            $category = Category::where('id', $id)->firstOrFail();
-            return view('admin.content.category.show', compact('category'));
-        }
-        public function edit($id)
-        {
-            $category = Category::where('id', $id)->firstOrFail();
-            return view('admin.content.category.edit', compact('category'));
-        }
-
-        public function update(Request $request, $id)
-        {
-            $category = Category::where('id', $id)->firstOrFail();
-            $category->update($request->all());
-            return redirect('/admin/category');
-
-        }
-        public function destroy($id)
-        {
-            Category::where('id', $id)->delete();
-            return redirect('/admin/category');
-        }
-
-    }
-
-
-Создаем представления view в resources/views/admin/content/category/
-
-blade шаблон для index:
------------------------
-resources/views/admin/content/category/index.blade.php
-
-    @extends('layouts.dashboard')
-    @section('page_heading','Categories')
-
-    @section('section')
-    <div class="col-sm-12">
-
-    <div class="row">
-        <div class="col-sm-12">
-            @section ('cotable_panel_title','Categories List')
-            @section ('cotable_panel_body')
-        
-        {!! link_to_route('admin.category.create', 'New category') !!}
-            
-            <table class="table table-bordered">
-                <thead>
-                    <tr>
-                          <th>id</th>
-                          <th>Name</th>
-                          <th>Edit</th>
-                          <th>Remove</th>
-                    </tr>
-                </thead>
-                <tbody>
-
-                @foreach ($categories as $category)
-
-                    <tr class="success">
-                        <td>{!! link_to_route('admin.category.edit', $category->id, $category->id) !!}</td>
-                        <td>{!! link_to_route('admin.category.edit', $category->title, $category->id) !!}</td>
-                        <td>{!! link_to_route('admin.category.edit', 'Edit', $category->id) !!}</td>
-
-                        <td>{!! Form::open(['method' => 'DELETE', 'route' => ['admin.category.destroy', $category->id]]) !!}
-                        <button type="submit">Delete</button>
-                        {!! Form::close() !!}</td>
-                    </tr>
-
-                @endforeach
-
-                </tbody>
-            </table>    
-        
-        <!-- pagination -->
-        {!! $categories->render() !!}
-
-            @endsection
-            @include('widgets.panel', array('header'=>true, 'as'=>'cotable'))
-        </div>
-    </div>
-    </div>
-    @stop
-
-
-blade шаблон для create:
-------------------------
-resources/views/admin/content/category/create.blade.php
-
-    @extends ('layouts.dashboard')
-    @section('page_heading','New Category')
-
-    @section('section')
-    <div class="col-sm-12">
-    <div class="row">
-        <div class="col-lg-12">
-            
-            {!! Form::open(['route' => 'admin.category.store', 'class' => 'form']) !!}
-                @include ('admin.content.category.form', ['submitButtonText' => 'Save'])
-            {!! Form::close() !!}
-
-        </div>
-        
-
-    </div>
-    </div>
-    @stop
-
-
-Добавляем через composer помошник HTML форм:
-
-    composer require laravelcollective/html
-
-и добавляем его в config/app.php
-
-   'providers' => [
-          ...
-          Collective\Html\HtmlServiceProvider::class,
-      ]
-      ...
-      'aliases' => [
-          ...
-          'Form'      => Collective\Html\FormFacade::class,
-          'Html'      => Collective\Html\HtmlFacade::class,
-      ]
-
-
-composer.json
---------------
-       "require": {
-            "php": ">=5.5.9",
-            "laravel/framework": "5.2.*",
-            "laravelcollective/html": "^5.2"
-        },
-
-app.php
--------
-       /*
-         * Application Service Providers...
-         */
-        App\Providers\AppServiceProvider::class,
-        App\Providers\AuthServiceProvider::class,
-        App\Providers\EventServiceProvider::class,
-        App\Providers\RouteServiceProvider::class,
-        //Illuminate\Html\HtmlServiceProvider::class,
-        Collective\Html\HtmlServiceProvider::class,
-
-
-          'aliases' => [
-
-        'View' => Illuminate\Support\Facades\View::class,
-        //'Form'      => 'Illuminate\Html\FormFacade',
-        //'Html'      => 'Illuminate\Html\HtmlFacade',
-        'Form' => Collective\Html\FormFacade::class,
-        'Html' => Collective\Html\HtmlFacade::class,
-
-
-
-blade шаблон для формы:
-----------------------
-resources/views/admin/content/category/form.blade.php
-
-    <div  class="form-group">
-        {!! Form::label('title', 'Category name:') !!}
-        {!! Form::text('title', 
-                           null, 
-                           array('required', 
-                          'class'=>'form-control', 
-                          'placeholder'=>'Category name*')) !!}
-    </div>
-    <div class="form-group">
-        {!! Form::label('slug', 'Category slug:') !!}
-        {!! Form::text('slug',
-                           null, 
-                           array('required', 
-                          'class'=>'form-control', 
-                          'placeholder'=>'Category slug*')) !!}
-    </div>
-
-    <div class="form-group">
-        {!! Form::label('parent_id', 'Category Parent:') !!}
-        {!! Form::number('parent_id',
-                           null, 
-                           array(
-                          'class'=>'form-control', 
-                          'placeholder'=>'Category Parent')) !!}
-    </div>
-
-    <div class="form-group">
-        {!! Form::label('seo_title', 'SEO title:') !!}
-        {!! Form::text('seo_title',null, 
-                           array(
-                          'class'=>'form-control', 
-                          'placeholder'=>'SEO title')) !!}
-    </div>
-    <div class="form-group">
-        {!! Form::label('seo_key', 'Seo Key:') !!}
-        {!! Form::text('seo_key',null, 
-                           array(
-                          'class'=>'form-control', 
-                          'placeholder'=>'Seo Key')) !!}
-
-    </div>
-    <div class="form-group">
-        {!! Form::label('seo_desc', 'SEO description:') !!}
-        {!! Form::textArea('seo_desc',null, 
-                           array(
-                          'class'=>'form-control', 
-                          'placeholder'=>'Seo description')) !!}
-    </div>
-
-    {!! Form::submit($submitButtonText, array('class'=>'btn btn-primary')) !!}
-    {!! Form::reset('Reset', array('class'=>'btn btn-info')) !!}
-
-
-
-Model Category
---------------
-
-в модели указываем какие поля можно присваивать
-
-    <?php
-
-    namespace App;
-
-    use Illuminate\Database\Eloquent\Model;
-
-    class Category extends Model
-    {
-        protected $fillable = ['title', 'slug', 'parent_id', 'seo_title', 'seo_key', 'seo_desc'];
-
-    }
-
-
-blade шаблон для edit:
-----------------------
-resources/views/admin/content/category/edit.blade.php
-
-    @extends ('layouts.dashboard')
-    @section('page_heading','Edit Category')
-
-    @section('section')
-    <div class="col-sm-12">
-    <div class="row">
-        <div class="col-lg-12">
-
-            {!! Form::model($category,['method' => 'PATCH', 'route' => ['admin.category.update', $category->id]]) !!}
-                @include ('admin.content.category.form', ['submitButtonText' => 'Update'])
-            {!! Form::close() !!}
-
-        </div>
-        
-
-    </div>
-    </div>
-    @stop
-
-layouts/dashboard.blade.php
----------------------------
-
-            <div class="navbar-default sidebar" role="navigation">
-                <div class="sidebar-nav navbar-collapse">
-                    <ul class="nav" id="side-menu">
-                        <li class="sidebar-search">
-                            <div class="input-group custom-search-form">
-                                <input type="text" class="form-control" placeholder="Search...">
-                                <span class="input-group-btn">
-                                <button class="btn btn-default" type="button">
-                                    <i class="fa fa-search"></i>
-                                </button>
-                            </span>
-                            </div>
-                            <!-- /input-group -->
-                        </li>
-                        <li {{ (Request::is('/admin') ? 'class="active"' : '') }}>
-                            <a href="{{ url ('admin') }}"><i class="fa fa-dashboard fa-fw"></i> Dashboard</a>
-                        </li>
-                        <li>
-                            <a href="#"><i class="fa fa-files-o fa-fw"></i> Categories<span class="fa arrow"></span></a>
-                            <ul class="nav nav-second-level">
-                                <li {{ (Request::is('*category') ? 'class="active"' : '') }}>
-                                    <a href="{{ url ('/admin/category') }}">All Categories</a>
-                                </li>
-                                <li>
-                                    <a href="{{ url ('/admin/category/create') }}">Add Category</a>
-                                </li>
-                            </ul>
-
-
-
-Всякий раз, когда объекту присваивается свойство title, будет вызван метод setTitleAttribute который проверит его на существование и добавит slug
-
-model Category
---------------
-    <?php
-
-    namespace App;
-
-    use Illuminate\Database\Eloquent\Model;
-
-    class Category extends Model
-    {
-        protected $fillable = ['title','slug', 'parent_id', 'seo_title', 'seo_key', 'seo_desc'];
-
-      public function setTitleAttribute($value) 
-
-      {
-        $this->attributes['title'] = $value;
-
-        if (! $this->exists) {
-          $this->attributes['slug'] = str_slug($value);
-        }
-      }
-
-    }
-
-blade шаблон для формы:
-----------------------
-resources/views/admin/content/category/form.blade.php
-
-    <div  class="form-group">
-        {!! Form::label('title', 'Category name:') !!}
-        {!! Form::text('title', 
-                           null, 
-                           array('required', 
-                          'class'=>'form-control', 
-                          'placeholder'=>'Category name*')) !!}
-    </div>
-
-    <div class="form-group">
-        {!! Form::label('parent_id', 'Category Parent:') !!}
-        {!! Form::number('parent_id',
-                           null, 
-                           array(
-                          'class'=>'form-control', 
-                          'placeholder'=>'Category Parent')) !!}
-    </div>
-
-    <div class="form-group">
-        {!! Form::label('seo_title', 'SEO title:') !!}
-        {!! Form::text('seo_title',null, 
-                           array(
-                          'class'=>'form-control', 
-                          'placeholder'=>'SEO title')) !!}
-    </div>
-    <div class="form-group">
-        {!! Form::label('seo_key', 'Seo Key:') !!}
-        {!! Form::text('seo_key',null, 
-                           array(
-                          'class'=>'form-control', 
-                          'placeholder'=>'Seo Key')) !!}
-
-    </div>
-    <div class="form-group">
-        {!! Form::label('seo_desc', 'SEO description:') !!}
-        {!! Form::textArea('seo_desc',null, 
-                           array(
-                          'class'=>'form-control', 
-                          'placeholder'=>'Seo description')) !!}
-    </div>
-
-    {!! Form::submit($submitButtonText, array('class'=>'btn btn-primary')) !!}
-    {!! Form::reset('Reset', array('class'=>'btn btn-info')) !!}
-
-
-Model Tag
----------
-    php artisan make:model --migration Tag
-
-    Model created successfully.
-    Created Migration: 2016_05_27_130215_create_tags_table
-
-
-2016_05_27_130215_create_tags_table
-
-    class CreateTagsTable extends Migration
-    {
-        /**
-         * Run the migrations.
-         *
-         * @return void
-         */
         public function up()
         {
-            Schema::create('tags', function (Blueprint $table) {
-                $table->increments('id');
-                $table->string('tag')->unique();
-                $table->timestamps();
+            Schema::table('tags', function (Blueprint $table) {
+                $table->dropColumn('tag');
+                $table->string('name');
+                $table->string('slug')->unique()->after('name');
             });
-
-             DB::table('tags')->insert([
-                'tag' => "Pink"
-                ]);
-
-            DB::table('tags')->insert([
-                'tag' => "T-Shirt"
-                ]);
         }
 
-Migration
----------
+        public function down()
+        {
+            Schema::table('tags', function (Blueprint $table) {
+               $table->dropColumn('name'); //
+               $table->dropColumn('slug'); //
+            });
+        }
+
+
+
+    php artisan make:migration add_category_to_articles --table=articles
+
+    Created Migration: 2016_06_03_072443_add_category_to_articles
+
+
+    class AddCategoryToArticles extends Migration
+    {
+        public function up()
+        {
+            Schema::table('articles', function (Blueprint $table) {
+                
+                $table->integer('category_id')->unsigned()->after('content');
+                $table->softDeletes();
+                
+                $table->foreign('category_id')
+                    ->references('id')
+                    ->on('categories')
+                    ->onDelete('cascade');
+            });
+        }
+
+        public function down()
+        {
+            Schema::table('articles', function (Blueprint $table) {
+                $table->dropColumn('category_id'); //
+            });
+        }
+
+
+    php artisan make:migration create_articl_tag_tabe
+
+    Created Migration: 2016_06_03_074352_create_articl_tag_tabe
+
+
+        public function up()
+        {
+           Schema::create('article_tag', function (Blueprint $table) {
+                $table->increments('id');
+
+                $table->integer('article_id')->unsigned()->index();
+                $table->foreign('article_id')->references('id')->on('articles')->onDelete('cascade');
+
+                $table->integer('tag_id')->unsigned()->index();
+                $table->foreign('tag_id')->references('id')->on('tags')->onDelete('cascade');
+
+                $table->timestamps();
+
+            });
+        }
+
+        public function down()
+        {
+            Schema::drop('article_tag');
+        }
+
     php artisan migrate
 
-    Migrated: 2016_05_27_130215_create_tags_table
+    Migrated: 2016_06_03_074352_create_articl_tag_tabe
 
-Tag Model
----------
+
+ИСПОЛЬЗОВАНИЕ ВАЛИДАЦИИ
+=======================
+Laravel поставляется с простой, удобной системой валидации (проверки входных данных на соответствие правилам) и получения сообщений об ошибках - классом Validation.
+
+ВАЛИДАЦИЯ В КОНТРОЛЛЕРАХ
+========================
+Писать полный код валидации каждый раз, когда нужно провалидировать данные - это неудобно. Поэтому Laravel предоставляет несколько решений для упрощения этой процедуры.
+
+Базовый контроллер App\Http\Controllers\Controller включает в себя трейт ValidatesRequests, который уже содержит методы для валидации:
+
+      <?php
+
+      namespace App\Http\Controllers;
+
+      use Illuminate\Foundation\Bus\DispatchesJobs;
+      use Illuminate\Routing\Controller as BaseController;
+      use Illuminate\Foundation\Validation\ValidatesRequests;
+      use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+      use Illuminate\Foundation\Auth\Access\AuthorizesResources;
+
+      class Controller extends BaseController
+      {
+          use AuthorizesRequests, AuthorizesResources, DispatchesJobs, ValidatesRequests;
+      }
+
+
+Если валидация проходит, код продолжает выполняться. Если нет - бросается исключение Illuminate\Contracts\Validation\ValidationException. Если вы не поймаете это исключение, его поймает фреймворк, заполнит flash-переменные сообщениями об ошибках валидации и средиректит пользователя на предыдущую страницу с формой - сам !
+
+
+ВАЛИДАЦИЯ ЗАПРОСОВ
+-------------------
+Для реализации более сложных сценариев валидации вам могут быть удобны так называемые Form Requests. Это специальные классы HTTP-запроса, содержащие в себе логику валидации. Они обрабатывают запрос до того, как он поступит в контроллер.
+
+Чтобы создать класс запроса, используйте artisan-команду make:request:
+
+   php artisan make:request TagRequest
+
+
+Класс будет создан в папке app/Http/Requests. 
+
+
+      <?php namespace App\Http\Requests;
+
+      class TagRequest extends Request
+      {
+          public function authorize()
+          {
+              return true;
+          }
+
+Добавьте необходимые правила валидации в его метод rules:
+
+          public function rules()
+          {
+              return [
+                  'name' => 'required|min:2',
+              ];
+          }
+      }
+
+
+Для того, чтобы фреймворк перехватил запрос перед контроллером, добавьте этот класс в аргументы необходимого метода контроллера:
+
+      use App\Http\Requests\TagRequest;
+
+      public function store(TagRequest $request)
+      {
+        Tag::create($request->all());
+        return redirect('admin/tags');
+      }
+
+При грамотном использовании валидации запросов вы можете быть уверены, что в ваших контроллерах всегда находятся только отвалидированные входные данные !
+
+В случае неудачной валидации фреймворк заполняет флэш-переменные ошибками валидации и возврашает редирект на предыдущую страницу.
+
+
+    public function update(TagRequest $request, $id)
+    {
+        $tag = Tag::findOrFail($id);
+
+        $tag->update($request->all());
+
+        return redirect('admin/tags');
+    }
+
+
+
+
+РАБОТА С СООБЩЕНИЯМИ
+====================
+
+  composer require laracasts/flash
+  Using version ^2.0 for laracasts/flash
+  ./composer.json has been updated
+  Loading composer repositories with package information
+  Updating dependencies (including require-dev)
+    - Installing laracasts/flash (2.0.0)
+      Downloading: 100%         
+
+app.php
+------- 
+    Collective\Html\HtmlServiceProvider::class,
+    Laracasts\Flash\FlashServiceProvider::class,
+    
+
+    'Flash' => Laracasts\Flash\Flash::class,
+
+publish
+-------
+    php artisan vendor:publish
+
+    Copied Directory [/vendor/laracasts/flash/src/views] To [/resources/views/vendor/flash]
+
+flash::message
+--------------
+    <body>
+      @include('flash::message')
+      @yield('body')
+      <script src="{{ asset("assets/scripts/frontend.js") }}" type="text/javascript"></script>
+        @yield('scripts')
+        @yield('footer')
+    </body>
+    </html>
+
+
+controller
+----------
+      public function store(TagRequest $request)
+        {
+            Tag::create($request->all());
+
+            flash()->success('Your tag has been created!');
+
+            return redirect('admin/tags');
+        }
+
+    
+      public function update(TagRequest $request, $id)
+      {
+          $tag = Tag::findOrFail($id);
+
+          $tag->update($request->all());
+
+          flash()->success('Your tag has been updateed!');
+
+          return redirect('admin/tags');
+      }
+
+ОПРЕДЕЛЕНИЕ ОТНОШЕНИЙ
+=====================
+Отношения Eloquent определяются при помощи методов в модели Eloquent. Т.к. связи (как и сами модели) по сути являются конструкторами запросов, определение связей в виде методов позволяет использовать мощный механизм сцепления методов в цепочку и построения запроса. 
+
+Например:
+
+  $user->posts()->where('active', 1)->get();
+
+
+Один к одному
+-------------
+Связь вида «один к одному» является очень простой. К примеру, модель User может иметь один Phone. Для определения такой связи мы заведем метод phone в модели User. Метод phone должен вернуть результат метода hasOne базового класса Eloquent модели:
+
+    namespace App;
+
+    use Illuminate\Database\Eloquent\Model;
+
+    class User extends Model
+    {
+        /**
+         * Получить телефон, связанный с пользователем.
+         */
+        public function phone()
+        {
+            return $this->hasOne('App\Phone');
+        }
+    }
+
+Первый аргумент, передаваемый в метод hasOne - имя модели связи. Теперь, когда связь определена можно получить связанную запись при помощи динамического атрибута. Динамические атрибуты позволяют обращаться к отношениям так, будто они являются атрибутами самой модели:
+
+    $phone = User::find(1)->phone;
+
+Eloquent по умолчанию предугадывает имя внешнего ключа по имени модели. В данном случае подразумевается что модель Phone имеет внешний ключ user_id. Если хотите переопределить это правило, имя ключа можно передать вторым параметром в методhasOne:
+
+    return $this->hasOne('App\Phone', 'foreign_key');
+
+Также Eloquent предполагает, что значение внешнего ключа будет равно id (или атрибуту, указанному в $primaryKey) родительской модели. Другими словами, Eloquent будет искать пользователя с id равным столбцу user_id в модели Phone. Если хотите использовать другой атрибут (не id) в качестве идентификатора связи, можно передать третий параметр в метод hasOne указав свой ключ:
+
+    return $this->hasOne('App\Phone', 'foreign_key', 'local_key');
+
+Определение обратного отношения
+-------------------------------
+Итак мы можем получить модель телефона (Phone) из модели пользователя (User). Давайте теперь определим связь на стороне телефона, что позволит нам иметь доступ к модели пользователя (User), владельцу телефона. Мы можем определить обратное отношение к hasOne при помощи метода belongsTo:
 
     <?php
 
@@ -638,204 +284,201 @@ Tag Model
 
     use Illuminate\Database\Eloquent\Model;
 
-    class Tag extends Model
+    class Phone extends Model
     {
-        protected $fillable = array('tag');
+        /**
+         * Получить пользователя - владельца телефона
+         */
+        public function user()
+        {
+            return $this->belongsTo('App\User');
+        }
     }
 
-admin/TagController
---------------------
-    php artisan make:controller admin/TagController
+Eloquent попытается сопоставить user_id модели Phone атрибуту id модели User. Eloquent определяет дефолтное имя внешнего ключа по имени метода, который задает отношение, добавив к нему суффикс _id. Однако, если имя внешнего ключа в модели Phone не user_id, можно передать собственное имя ключа вторым параметром метода belongsTo:
 
-    Controller created successfully.
+    /**
+     * Получить пользователя - владельца телефон
+     */
+    public function user()
+    {
+        return $this->belongsTo('App\User', 'foreign_key');
+    }
 
-routes.php
-----------
+Если родительская модель не использует id в качестве первичного ключа, или вы хотите связать дочернею модель с родительской по другой колонке, можно передать третьим параметром в метод belongsTo имя ключа для связи:
 
-    Route::group(['prefix'=>'admin'],function(){
-        Route::any('/','admin\DashboardController@index');
-        Route::resource('home', 'admin\DashboardController');
-        Route::resource('category','admin\CategoryController');
-        Route::resource('tag','admin\TagController');
-        Route::resource('blog','admin\BlogController');
-    });
+    /**
+     * Получить пользователя - владельца телефон
+     */
+    public function user()
+    {
+        return $this->belongsTo('App\User', 'foreign_key', 'other_key');
+    }
 
+Один ко многим
+--------------
+Тип связи "один ко многим" используется для определения таких отношений, в которых одна модель может иметь неограниченное количество других моделей. Например статья в блоге может иметь неограниченное количество комментариев. Как и любые другие отношения Eloquent, связь "один ко многим" определяется при помощи метода модели Eloquent:
 
-TagController
--------------
-      <?php
+    <?php
 
-      namespace App\Http\Controllers\admin;
+    namespace App;
 
-      use Illuminate\Http\Request;
-      use App\Tag;
-      use App\Http\Requests;
-      use App\Http\Controllers\Controller;
+    use Illuminate\Database\Eloquent\Model;
 
-      class TagController extends Controller
-      {
-          public function index()
-          {
-           
-          $tags = Tag::orderBy('id', 'DESC')->paginate(config('blog.admin_posts_per_page'));
-              return view('admin.content.tag.index', compact('tags')); 
+    class Post extends Model
+    {
+        /**
+         * Получить комментарии к записи.
+         */
+        public function comments()
+        {
+            return $this->hasMany('App\Comment');
+        }
+    }
 
-          }
+Eloquent будет автоматически определять внешний ключ в модели Comment. Обычно при этом берется имя родительской модели в "змеином_регистре" ("snake case") и добавляется суффикс _id. Например, в нашем случае в модели Comment Eloquent будет искать поле post_id.
 
-          public function create()
-          {
-              $tag = new Tag;
-              return view('admin.content.tag.create', compact('tag'));
-          }
-          
-          public function store(Request $request)
-          {
-              Tag::create($request->all());
-              return redirect('/admin/tag');
-          }
-          
-          public function show($id)
-          {
-              $tag = Tag::where('id', $id)->firstOrFail();
-              return view('admin.content.tag.show', compact('tag'));
-          }
-          public function edit($id)
-          {
-              $tag = Tag::where('id', $id)->firstOrFail();
-              return view('admin.content.tag.edit', compact('tag'));
-          }
+Когда отношение описано, мы можем получить коллекцию комментариев через атрибут comments. динамические атрибуты позволяют обращаться к отношениям так, будто они являются атрибутами самой модели:
 
-          public function update(Request $request, $id)
-          {
-              $tag = Tag::where('id', $id)->firstOrFail();
-              $tag->update($request->all());
-              return redirect('/admin/tag');
+    $comments = App\Post::find(1)->comments;
 
-          }
-          public function destroy($id)
-          {
-              Tag::where('id', $id)->delete();
-              return redirect('/admin/tag');
-          }
+    foreach ($comments as $comment) {
+        //
+    }
+И конечно, т.к. наши отношения являются по сути построителями запроса, вы можете строить цепь вызовов добавляя необходимые условия, после вызова метода comments:
 
-      }
+    $comments = App\Post::find(1)->comments()->where('title', 'foo')->first();
 
+Как и в случае с методом hasOne, можно указать собственные имена ключей в таблицах, передавая их дополнительными параметрами в hasMany:
 
-create tag
------------
-    @extends ('layouts.dashboard')
-    @section('page_heading','New Tag')
+    return $this->hasMany('App\Comment', 'foreign_key');
 
-    @section('section')
-    <div class="col-sm-12">
-    <div class="row">
-        <div class="col-lg-12">
-            
-            {!! Form::open(['route' => 'admin.tag.store', 'class' => 'form']) !!}
-                @include ('admin.content.tag.form', ['submitButtonText' => 'Save'])
-            {!! Form::close() !!}
+    return $this->hasMany('App\Comment', 'foreign_key', 'local_key');
+Определение обратного отношения
+-------------------------------
+Теперь, когда у нас есть метод для получения всех комментариев записи блога, давайте определим отношение для получения родительской записи из модели комментария. Для описания обратной связи hasMany служит метод belongsTo:
 
-        </div>
-        
+    <?php
 
-    </div>
-    </div>
-    @stop
+    namespace App;
 
-edit tag
---------
-    @extends ('layouts.dashboard')
-    @section('page_heading','Edit Tag')
+    use Illuminate\Database\Eloquent\Model;
 
-    @section('section')
-    <div class="col-sm-12">
-    <div class="row">
-        <div class="col-lg-12">
+    class Comment extends Model
+    {
+        /**
+         * Получить родительскую запись комментария.
+         */
+        public function post()
+        {
+            return $this->belongsTo('App\Post');
+        }
+    }
+Теперь, когда отношение описано, мы можем получить родительский объект Post для Comment через "динамический атрибут" post:
 
-            {!! Form::model($tag,['method' => 'PATCH', 'route' => ['admin.tag.update', $tag->id]]) !!}
-                @include ('admin.content.tag.form', ['submitButtonText' => 'Update'])
-            {!! Form::close() !!}
+    $comment = App\Comment::find(1);
 
-        </div>
-        
+    echo $comment->post->title;
 
-    </div>
-    </div>
-    @stop
+Eloquent будет пытаться найти объект Post с id равным post_id модели Comment. Eloquent по умолчанию определяет имя внешнего ключа по имени метода, задающего отношение с суффиксом _id. Однако, если в модели Comment внешний ключ не равен post_id, можно передать свое имя в метод belongsTo:
 
+    /**
+     * Получить родительскую запись комментария.
+     */
+    public function post()
+    {
+        return $this->belongsTo('App\Post', 'foreign_key');
+    }
+Если родительская модель не использует id в качестве первичного ключа, или вы хотите связать дочернею модель с родительской по другой колонке, можно передать третьим параметром в метод belongsTo имя ключа для связи:
 
-form tag
---------
+    /**
+     * Получить родительскую запись комментария.
+     */
+    public function post()
+    {
+        return $this->belongsTo('App\Post', 'foreign_key', 'other_key');
+    }
 
-    <div  class="form-group">
-        {!! Form::label('tag', 'Tag name:') !!}
-        {!! Form::text('tag', 
-                           null, 
-                           array('required', 
-                          'class'=>'form-control', 
-                          'placeholder'=>'Tag name*')) !!}
-    </div>
+Многие ко многим
+----------------
+Отношения типа «многие ко многим» - более сложные, чем остальные виды отношений. Примером может служить пользователь, имеющий много ролей, где роли также относятся ко многим пользователям. Например, один пользователь может иметь роль «Admin». Для этой связи нужны три таблицы : users, roles и role_user. Название таблицы role_user происходит от упорядоченного по алфавиту имён связанных моделей и она должна иметь поля user_id и role_id.
 
-    {!! Form::submit($submitButtonText, array('class'=>'btn btn-primary')) !!}
-    {!! Form::reset('Reset', array('class'=>'btn btn-info')) !!}
+Вы можете определить отношение «многие ко многим» через метод belongsToMany. Давайте для примера определим связь roles в модели User:
 
-index tag
----------
+    <?php
 
-    @extends('layouts.dashboard')
-    @section('page_heading','Tags')
+    namespace App;
 
-    @section('section')
-    <div class="col-sm-12">
+    use Illuminate\Database\Eloquent\Model;
 
-    <div class="row">
-        <div class="col-sm-12">
-            @section ('cotable_panel_title','Tags List')
-            @section ('cotable_panel_body')
-        
-        {!! link_to_route('admin.tag.create', 'New Tag') !!}
-            
-            <table class="table table-bordered">
-                <thead>
-                    <tr>
-                          <th>id</th>
-                          <th>Name</th>
-                          <th>Edit</th>
-                          <th>Remove</th>
-                    </tr>
-                </thead>
-                <tbody>
+    class User extends Model
+    {
+        /**
+         * Роли, к которым принадлежит пользователь.
+         */
+        public function roles()
+        {
+            return $this->belongsToMany('App\Role');
+        }
+    }
+Когда отношение описано, мы можем получить роли пользователя через динамический атрибут roles:
 
-                @foreach ($tags as $tag)
+    $user = App\User::find(1);
 
-                    <tr class="success">
-                        <td>{!! link_to_route('admin.tag.edit', $tag->id, $tag->id) !!}</td>
-                        <td>{!! link_to_route('admin.tag.edit', $tag->tag, $tag->id) !!}</td>
-                        <td>{!! link_to_route('admin.tag.edit', 'Edit', $tag->id) !!}</td>
+    foreach ($user->roles as $role) {
+        //
+    }
+И конечно же, как и в случае с любым другим типом отношений, можно выстраивать цепочки вызовов таким образом:
 
-                        <td>{!! Form::open(['method' => 'DELETE', 'route' => ['admin.tag.destroy', $tag->id]]) !!}
-                        <button type="submit">Delete</button>
-                        {!! Form::close() !!}</td>
-                    </tr>
+    $roles = App\User::find(1)->roles()->orderBy('name')->get();
 
-                @endforeach
+имя связующей таблицы по умолчанию строится по именам моделей в алфавитном порядке. Однако его можно переопределить. Делается это при помощи второго параметра метода belongsToMany:
 
-                </tbody>
-            </table>    
-        
-        <!-- pagination -->
-        {!! $tags->render() !!}
+    return $this->belongsToMany('App\Role', 'role_user');
+Помимо собственного названия связующей таблицы​, можно также переопределить имена колонок-ключей при помощи дополнительных параметров метода belongsToMany. Третий аргумент — колонка, ссылающаяся на модель, в которой вы описываете отношение, четвертый — колонка, ссылающаяся на модель с которой строится связь:
 
-            @endsection
-            @include('widgets.panel', array('header'=>true, 'as'=>'cotable'))
-        </div>
-    </div>
-    </div>
-    @stop
+    return $this->belongsToMany('App\Role', 'role_user', 'user_id', 'role_id');
 
-dashboard tag
--------------
-                        <li {{ (Request::is('*tag') ? 'class="active"' : '') }}>
-                            <a href="{{ url ('/admin/tag') }}"><i class="fa fa-bar-chart-o fa-fw"></i> Tags</a>
-                            <!-- /.nav-second-level -->
-                        </li>
+Определение обратного отношения
+-------------------------------
+Для определения обратного отношения «многие ко многим» необходимо просто добавить такой же вызов метода belongsToMany но, со стороны другой модели. В продолжение нашего примера с ролями пользователя, определим метод users в модели Role:
+
+    <?php
+
+    namespace App;
+
+    use Illuminate\Database\Eloquent\Model;
+
+    class Role extends Model
+    {
+        /**
+         * Пользователи, которые принадлежат данной роли.
+         */
+        public function users()
+        {
+            return $this->belongsToMany('App\User');
+        }
+    }
+
+отношение описывается точно также, как обратное, со стороны пользователя, с той лишь разницей, что ссылаемся мы теперь на модель App\User. Т.к. вызов метода belongsToMany является таким же точно, как и выше, все опции по заданию собственных имен таблиц и колонок выглядят идентично.
+
+Работа с данными связующих таблиц
+---------------------------------
+Как вы уже знаете отношения типа «многие ко многим» требует дополнительную связующую таблицу. Eloquent позволяет работать с этой таблицей, что бывает весьма полезно. Предположим, что наш объект User имеет много ролей (объектов Role). После того, как мы получили объект отношения, мы можем получить доступ к связующей таблице при помощи атрибута pivot у каждого из объектов:
+
+    $user = App\User::find(1);
+
+    foreach ($user->roles as $role) {
+        echo $role->pivot->created_at;
+    }
+
+у каждой из моделей Role есть автоматически созданный атрибут pivot. Этот атрибут представляет из себя модель с данными связующей таблицы, и может использоваться как обычный объект Eloquent.
+
+По умолчанию, в объекте pivot будут присутствовать только ключи моделей. Если ваша связующая таблица содержит дополнительные атрибуты, их необходимо перечислить при описании отношения:
+
+    return $this->belongsToMany('App\Role')->withPivot('column1', 'column2');
+
+Если вы хотите, чтобы связующая таблица автоматически поддерживала таймстемпы created_at и updated_at, используйте метод withTimestamps при описании отношения:
+
+    return $this->belongsToMany('App\Role')->withTimestamps();
+

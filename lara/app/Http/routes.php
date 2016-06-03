@@ -11,26 +11,28 @@
 |
 */
 
-Route::get('/', ['as' => 'posts', 'uses' => 'PostController@index']);
 
-Route::get('blog/{slug}', 'BlogController@showPost');  
+Route::group(['prefix'=>'admin', 'namespace' => 'Admin'],function(){
+    Route::any('/','DashboardController@index');
 
-Route::resource('posts', 'PostController');
-Route::resource('blog', 'BlogController');
-Route::resource('category', 'CategoryController');
-
-Route::post('admin/blog/{id}/edit', 'admin\BlogController@edit');
-Route::post('admin/blog/{id}/update', 'admin\BlogController@update');
-
-
-Route::group(['prefix'=>'admin'],function(){
-    Route::any('/','admin\DashboardController@index');
-    Route::resource('home', 'admin\DashboardController');
-    Route::resource('category','admin\CategoryController');
-    Route::resource('tag','admin\TagController');
-    Route::resource('blog','admin\BlogController');
+    Route::resource('index', 'DashboardController');
+    Route::resource('categories','CategoriesController');
+    Route::resource('articles','ArticlesController');
+    Route::resource('tags','TagsController');
+    
 });
 
+Route::group(['namespace' => 'Home'], function () {
 
+    Route::resource('/', 'HomeController@index');
 
+    Route::get('tags', 'TagsController@index');
+    Route::get('tags/{slug}', 'TagsController@show');
+
+    Route::get('categories', 'CategoriesController@index');
+    Route::get('categories/{slug}', 'CategoriesController@show');
+
+    Route::get('articles', 'ArticlesController@index');
+    Route::get('{slug}', 'ArticlesController@show');
+});
 

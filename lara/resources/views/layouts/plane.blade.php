@@ -13,9 +13,13 @@
 	<meta content="" name="author"/>
 
 	<link rel="stylesheet" href="{{ asset("assets/stylesheets/styles.css") }}" />
+	@yield('header')
 </head>
 <body>
+	@include('flash::message')
 	@yield('body')
 	<script src="{{ asset("assets/scripts/frontend.js") }}" type="text/javascript"></script>
+    @yield('scripts')
+    @yield('footer')
 </body>
 </html>
