@@ -11,6 +11,8 @@ class HomeController extends Controller
         
         $articles = Article::with('tags', 'category')->latest()->get();
 
+        //print_r($articles);
+
         return view('home.index', compact('articles'));
     }
 }

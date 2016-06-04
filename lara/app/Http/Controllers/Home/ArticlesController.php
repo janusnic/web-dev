@@ -14,7 +14,7 @@ class ArticlesController extends Controller
     {
 
         $articles = Article::with('tags', 'category')->latest()->paginate(10);
-
+        
         return view('home.articles.index', compact('articles'));
     }
 

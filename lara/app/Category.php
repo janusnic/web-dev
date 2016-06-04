@@ -4,7 +4,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Category extends Model
 {
-    protected $fillable = ['title', 'parent_id'];
+    protected $fillable = ['title', 'slug'];
 
     public function articles()
     {
@@ -19,6 +19,7 @@ class Category extends Model
       $this->attributes['slug'] = str_slug($value);
         }
     }
+
 
     public function scopeFindBySlug($query, $slug)
     {

@@ -12,15 +12,19 @@
 */
 
 
-Route::group(['prefix'=>'admin', 'namespace' => 'Admin'],function(){
+Route::group(['prefix'=>'admin', 'namespace' => 'Admin', 'middleware' => 'auth'],function(){
     Route::any('/','DashboardController@index');
 
     Route::resource('index', 'DashboardController');
     Route::resource('categories','CategoriesController');
     Route::resource('articles','ArticlesController');
     Route::resource('tags','TagsController');
-    
+    Route::resource('users','UsersController');
 });
+
+Route::get('login', 'Admin\AuthController@getLogin');
+Route::post('login', 'Admin\AuthController@postLogin');
+Route::get('logout', 'Admin\AuthController@logout');
 
 Route::group(['namespace' => 'Home'], function () {
 

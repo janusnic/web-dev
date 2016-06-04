@@ -85,8 +85,6 @@ class TagsController extends Controller
 
         $tag->update($request->all());
 
-        flash()->success('Your tag has been updateed!');
-
         return redirect('admin/tags');
     }
 

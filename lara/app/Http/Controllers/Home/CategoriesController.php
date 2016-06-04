@@ -2,7 +2,7 @@
 
 use App\Http\Controllers\Controller;
 use App\Category;
-
+use App\Article;
 class CategoriesController extends Controller
 {
     /**
@@ -24,10 +24,9 @@ class CategoriesController extends Controller
      */
     public function show($slug)
     {
-
         $category = Category::findBySlug($slug);
 
-        $articles = \App\Article::with('tags', 'category')->whereHas('category', function ($query) use ($slug) {
+        $articles = Article::with('tags', 'category')->whereHas('category', function ($query) use ($slug) {
             $query->whereSlug($slug);
         })->latest()->paginate(10);
 

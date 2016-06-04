@@ -1,484 +1,569 @@
-# web-dev unit_19
+# web-dev unit_20
 
 Изменение структуры таблиц
 ==========================
-    php artisan make:migration add_slug_to_tags --table=tags
+     php artisan make:migration add_role_to_users --table=users
 
+     Created Migration: 2016_06_04_045617_add_role_to_users
 
-    class AddSlugToTags extends Migration
+    <?php
+
+    use Illuminate\Database\Schema\Blueprint;
+    use Illuminate\Database\Migrations\Migration;
+
+    class AddRoleToUsers extends Migration
     {
         public function up()
         {
-            Schema::table('tags', function (Blueprint $table) {
-                $table->dropColumn('tag');
-                $table->string('name');
-                $table->string('slug')->unique()->after('name');
-            });
-        }
-
-        public function down()
-        {
-            Schema::table('tags', function (Blueprint $table) {
-               $table->dropColumn('name'); //
-               $table->dropColumn('slug'); //
-            });
-        }
-
-
-
-    php artisan make:migration add_category_to_articles --table=articles
-
-    Created Migration: 2016_06_03_072443_add_category_to_articles
-
-
-    class AddCategoryToArticles extends Migration
-    {
-        public function up()
-        {
-            Schema::table('articles', function (Blueprint $table) {
+            Schema::table('users', function (Blueprint $table) {
+                //
+                $table->string('role', 60)->default('author')->after('password');
                 
-                $table->integer('category_id')->unsigned()->after('content');
-                $table->softDeletes();
-                
-                $table->foreign('category_id')
-                    ->references('id')
-                    ->on('categories')
-                    ->onDelete('cascade');
+                $table->boolean('active')->default(0)->after('role');
             });
+
+            $user = new \App\User();
+            $user->name = 'janus';
+            $user->email = 'janus@example.com';
+            $user->password = 'ghbdtn';
+            $user->role = 'admin';
+            $user->active = '1';
+            $user->save();
         }
 
         public function down()
         {
-            Schema::table('articles', function (Blueprint $table) {
-                $table->dropColumn('category_id'); //
+            Schema::table('users', function (Blueprint $table) {
+                //
+                $table->dropColumn('role'); 
+                $table->dropColumn('active'); 
             });
         }
-
-
-    php artisan make:migration create_articl_tag_tabe
-
-    Created Migration: 2016_06_03_074352_create_articl_tag_tabe
-
-
-        public function up()
-        {
-           Schema::create('article_tag', function (Blueprint $table) {
-                $table->increments('id');
-
-                $table->integer('article_id')->unsigned()->index();
-                $table->foreign('article_id')->references('id')->on('articles')->onDelete('cascade');
-
-                $table->integer('tag_id')->unsigned()->index();
-                $table->foreign('tag_id')->references('id')->on('tags')->onDelete('cascade');
-
-                $table->timestamps();
-
-            });
-        }
-
-        public function down()
-        {
-            Schema::drop('article_tag');
-        }
-
-    php artisan migrate
-
-    Migrated: 2016_06_03_074352_create_articl_tag_tabe
-
-
-ИСПОЛЬЗОВАНИЕ ВАЛИДАЦИИ
-=======================
-Laravel поставляется с простой, удобной системой валидации (проверки входных данных на соответствие правилам) и получения сообщений об ошибках - классом Validation.
-
-ВАЛИДАЦИЯ В КОНТРОЛЛЕРАХ
-========================
-Писать полный код валидации каждый раз, когда нужно провалидировать данные - это неудобно. Поэтому Laravel предоставляет несколько решений для упрощения этой процедуры.
-
-Базовый контроллер App\Http\Controllers\Controller включает в себя трейт ValidatesRequests, который уже содержит методы для валидации:
-
-      <?php
-
-      namespace App\Http\Controllers;
-
-      use Illuminate\Foundation\Bus\DispatchesJobs;
-      use Illuminate\Routing\Controller as BaseController;
-      use Illuminate\Foundation\Validation\ValidatesRequests;
-      use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
-      use Illuminate\Foundation\Auth\Access\AuthorizesResources;
-
-      class Controller extends BaseController
-      {
-          use AuthorizesRequests, AuthorizesResources, DispatchesJobs, ValidatesRequests;
-      }
-
-
-Если валидация проходит, код продолжает выполняться. Если нет - бросается исключение Illuminate\Contracts\Validation\ValidationException. Если вы не поймаете это исключение, его поймает фреймворк, заполнит flash-переменные сообщениями об ошибках валидации и средиректит пользователя на предыдущую страницу с формой - сам !
-
-
-ВАЛИДАЦИЯ ЗАПРОСОВ
--------------------
-Для реализации более сложных сценариев валидации вам могут быть удобны так называемые Form Requests. Это специальные классы HTTP-запроса, содержащие в себе логику валидации. Они обрабатывают запрос до того, как он поступит в контроллер.
-
-Чтобы создать класс запроса, используйте artisan-команду make:request:
-
-   php artisan make:request TagRequest
-
-
-Класс будет создан в папке app/Http/Requests. 
-
-
-      <?php namespace App\Http\Requests;
-
-      class TagRequest extends Request
-      {
-          public function authorize()
-          {
-              return true;
-          }
-
-Добавьте необходимые правила валидации в его метод rules:
-
-          public function rules()
-          {
-              return [
-                  'name' => 'required|min:2',
-              ];
-          }
-      }
-
-
-Для того, чтобы фреймворк перехватил запрос перед контроллером, добавьте этот класс в аргументы необходимого метода контроллера:
-
-      use App\Http\Requests\TagRequest;
-
-      public function store(TagRequest $request)
-      {
-        Tag::create($request->all());
-        return redirect('admin/tags');
-      }
-
-При грамотном использовании валидации запросов вы можете быть уверены, что в ваших контроллерах всегда находятся только отвалидированные входные данные !
-
-В случае неудачной валидации фреймворк заполняет флэш-переменные ошибками валидации и возврашает редирект на предыдущую страницу.
-
-
-    public function update(TagRequest $request, $id)
-    {
-        $tag = Tag::findOrFail($id);
-
-        $tag->update($request->all());
-
-        return redirect('admin/tags');
     }
 
+class User
+-----------
+    <?php namespace App;
 
-
-
-РАБОТА С СООБЩЕНИЯМИ
-====================
-
-  composer require laracasts/flash
-  Using version ^2.0 for laracasts/flash
-  ./composer.json has been updated
-  Loading composer repositories with package information
-  Updating dependencies (including require-dev)
-    - Installing laracasts/flash (2.0.0)
-      Downloading: 100%         
-
-app.php
-------- 
-    Collective\Html\HtmlServiceProvider::class,
-    Laracasts\Flash\FlashServiceProvider::class,
-    
-
-    'Flash' => Laracasts\Flash\Flash::class,
-
-publish
--------
-    php artisan vendor:publish
-
-    Copied Directory [/vendor/laracasts/flash/src/views] To [/resources/views/vendor/flash]
-
-flash::message
---------------
-    <body>
-      @include('flash::message')
-      @yield('body')
-      <script src="{{ asset("assets/scripts/frontend.js") }}" type="text/javascript"></script>
-        @yield('scripts')
-        @yield('footer')
-    </body>
-    </html>
-
-
-controller
-----------
-      public function store(TagRequest $request)
-        {
-            Tag::create($request->all());
-
-            flash()->success('Your tag has been created!');
-
-            return redirect('admin/tags');
-        }
-
-    
-      public function update(TagRequest $request, $id)
-      {
-          $tag = Tag::findOrFail($id);
-
-          $tag->update($request->all());
-
-          flash()->success('Your tag has been updateed!');
-
-          return redirect('admin/tags');
-      }
-
-ОПРЕДЕЛЕНИЕ ОТНОШЕНИЙ
-=====================
-Отношения Eloquent определяются при помощи методов в модели Eloquent. Т.к. связи (как и сами модели) по сути являются конструкторами запросов, определение связей в виде методов позволяет использовать мощный механизм сцепления методов в цепочку и построения запроса. 
-
-Например:
-
-  $user->posts()->where('active', 1)->get();
-
-
-Один к одному
--------------
-Связь вида «один к одному» является очень простой. К примеру, модель User может иметь один Phone. Для определения такой связи мы заведем метод phone в модели User. Метод phone должен вернуть результат метода hasOne базового класса Eloquent модели:
-
-    namespace App;
-
+    use Illuminate\Auth\Authenticatable;
     use Illuminate\Database\Eloquent\Model;
+    use Illuminate\Auth\Passwords\CanResetPassword;
+    use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
+    use Illuminate\Contracts\Auth\CanResetPassword as CanResetPasswordContract;
 
-    class User extends Model
+    use Illuminate\Contracts\Auth\Access\Authorizable as AuthorizableContract;
+    use Illuminate\Foundation\Auth\Access\Authorizable;
+
+    class User extends Model implements AuthenticatableContract, CanResetPasswordContract
     {
-        /**
-         * Получить телефон, связанный с пользователем.
-         */
-        public function phone()
+        use Authenticatable, CanResetPassword;
+
+        protected $table = 'users';
+
+        protected $fillable = ['name', 'email', 'password'];
+        
+        protected $hidden = ['password', 'remember_token'];
+
+        public function setPasswordAttribute($password)
         {
-            return $this->hasOne('App\Phone');
+            $this->attributes['password'] = bcrypt($password);
         }
+
     }
 
-Первый аргумент, передаваемый в метод hasOne - имя модели связи. Теперь, когда связь определена можно получить связанную запись при помощи динамического атрибута. Динамические атрибуты позволяют обращаться к отношениям так, будто они являются атрибутами самой модели:
-
-    $phone = User::find(1)->phone;
-
-Eloquent по умолчанию предугадывает имя внешнего ключа по имени модели. В данном случае подразумевается что модель Phone имеет внешний ключ user_id. Если хотите переопределить это правило, имя ключа можно передать вторым параметром в методhasOne:
-
-    return $this->hasOne('App\Phone', 'foreign_key');
-
-Также Eloquent предполагает, что значение внешнего ключа будет равно id (или атрибуту, указанному в $primaryKey) родительской модели. Другими словами, Eloquent будет искать пользователя с id равным столбцу user_id в модели Phone. Если хотите использовать другой атрибут (не id) в качестве идентификатора связи, можно передать третий параметр в метод hasOne указав свой ключ:
-
-    return $this->hasOne('App\Phone', 'foreign_key', 'local_key');
-
-Определение обратного отношения
--------------------------------
-Итак мы можем получить модель телефона (Phone) из модели пользователя (User). Давайте теперь определим связь на стороне телефона, что позволит нам иметь доступ к модели пользователя (User), владельцу телефона. Мы можем определить обратное отношение к hasOne при помощи метода belongsTo:
-
+class UsersController
+---------------------
     <?php
 
-    namespace App;
+    namespace App\Http\Controllers\Admin;
 
-    use Illuminate\Database\Eloquent\Model;
+    use App\Http\Controllers\Controller;
+    use App\Http\Requests;
+    use App\Http\Requests\UserRequest;
+    use App\User;
 
-    class Phone extends Model
+    class UsersController extends Controller
     {
-        /**
-         * Получить пользователя - владельца телефона
-         */
-        public function user()
+        public function __construct()
         {
-            return $this->belongsTo('App\User');
+
+        }
+
+        public function index()
+        {
+            $users = User::latest()->paginate(15);
+
+            return view('admin.users.index', compact('users'));
+       }
+
+       public function create()
+        {
+            return view('admin.users.create');
+        }
+
+        /**
+         * Store a newly created resource in storage.
+         *
+         * @return Response
+         */
+        public function store(UserRequest $request)
+        {
+            User::create($request->all());
+
+            flash()->success('User has been created!');
+
+            return redirect('admin/users');
+        }
+
+
+       public function edit($id)
+        {
+            $user = User::findOrFail($id);
+
+            return view('admin.users.edit', compact('user'));
+        }
+
+        /**
+         * Update the specified resource in storage.
+         *
+         * @param int $id
+         *
+         * @return Response
+         */
+        public function update(UserRequest $request, $id)
+        {
+            $user = User::findOrFail($id);
+
+            $user->update($request->all());
+            flash()->success('User has been updateed!');
+
+            return redirect('admin/users');
         }
     }
 
-Eloquent попытается сопоставить user_id модели Phone атрибуту id модели User. Eloquent определяет дефолтное имя внешнего ключа по имени метода, который задает отношение, добавив к нему суффикс _id. Однако, если имя внешнего ключа в модели Phone не user_id, можно передать собственное имя ключа вторым параметром метода belongsTo:
+admin.users.index
+-----------------
 
-    /**
-     * Получить пользователя - владельца телефон
-     */
-    public function user()
-    {
-        return $this->belongsTo('App\User', 'foreign_key');
-    }
+    @extends('layouts.dashboard')
+    @section('page_heading','Users')
 
-Если родительская модель не использует id в качестве первичного ключа, или вы хотите связать дочернею модель с родительской по другой колонке, можно передать третьим параметром в метод belongsTo имя ключа для связи:
+    @section('section')
+    <div class="col-sm-12">
 
-    /**
-     * Получить пользователя - владельца телефон
-     */
-    public function user()
-    {
-        return $this->belongsTo('App\User', 'foreign_key', 'other_key');
-    }
+    <div class="row">
+        <div class="col-sm-12">
+            @section ('cotable_panel_title','Users List')
+            @section ('cotable_panel_body')
+        
+            {!! link_to_route('admin.users.create', 'New user') !!}
 
-Один ко многим
---------------
-Тип связи "один ко многим" используется для определения таких отношений, в которых одна модель может иметь неограниченное количество других моделей. Например статья в блоге может иметь неограниченное количество комментариев. Как и любые другие отношения Eloquent, связь "один ко многим" определяется при помощи метода модели Eloquent:
+                     <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Name</th>
+                            <th>Email</th>
+                            
+                            <th>Created At</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    @foreach($users as $user)
+                        <tr>
+                            <td>{{ $user->id }}</td>
+                            <td>{{ $user->name }}</td>
+                            <td>{{ $user->email }}</td>
+                            <td>{{ $user->created_at }}</td>
+                            <td>
+                                {!! Form::open(['method' => 'get', 'url' => 'admin/users/'.$user->id.'/edit', 'style' => 'float:left;margin-right: 10px;']) !!}
+                                    <button type="submit" class="btn btn-success btn-sm iframe cboxElement"><span class="glyphicon glyphicon-pencil"></span> Edite</button>
+                                {!! Form::close() !!}
 
-    <?php
+                                {!! Form::open(['method' => 'delete', 'url' => 'admin/users/'.$user->id, 'style' => 'float:left;margin-right: 10px;']) !!}
+                                    <button type="submit" class="btn btn-sm btn-danger iframe cboxElement"><span class="glyphicon glyphicon-trash"></span> Delete</button>
+                                {!! Form::close() !!}
+                            </td>
+                        </tr>
+                    @endforeach
+                    </tbody>
+                </table>
 
-    namespace App;
+            <div class="row">
+                <div class="col-sm-6">
+                    <div class="dataTables_info" id="dataTables-example_info" role="status" aria-live="polite">
+                        {{ $users->count() }} User(s) On Page #{{ $users->lastPage() }} From {{ $users->total() }}.
+                    </div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="dataTables_paginate paging_simple_numbers" id="dataTables-example_paginate">
+                    <!-- /.col-lg-12 -->    <!-- pagination -->
+                        {!! $users->render() !!}
 
-    use Illuminate\Database\Eloquent\Model;
+                    </div>
+                </div>
+            </div>
 
-    class Post extends Model
-    {
-        /**
-         * Получить комментарии к записи.
-         */
-        public function comments()
-        {
-            return $this->hasMany('App\Comment');
-        }
-    }
+            @endsection
+            @include('widgets.panel', array('header'=>true, 'as'=>'cotable'))
 
-Eloquent будет автоматически определять внешний ключ в модели Comment. Обычно при этом берется имя родительской модели в "змеином_регистре" ("snake case") и добавляется суффикс _id. Например, в нашем случае в модели Comment Eloquent будет искать поле post_id.
+    </div>
+    @stop
 
-Когда отношение описано, мы можем получить коллекцию комментариев через атрибут comments. динамические атрибуты позволяют обращаться к отношениям так, будто они являются атрибутами самой модели:
-
-    $comments = App\Post::find(1)->comments;
-
-    foreach ($comments as $comment) {
-        //
-    }
-И конечно, т.к. наши отношения являются по сути построителями запроса, вы можете строить цепь вызовов добавляя необходимые условия, после вызова метода comments:
-
-    $comments = App\Post::find(1)->comments()->where('title', 'foo')->first();
-
-Как и в случае с методом hasOne, можно указать собственные имена ключей в таблицах, передавая их дополнительными параметрами в hasMany:
-
-    return $this->hasMany('App\Comment', 'foreign_key');
-
-    return $this->hasMany('App\Comment', 'foreign_key', 'local_key');
-Определение обратного отношения
--------------------------------
-Теперь, когда у нас есть метод для получения всех комментариев записи блога, давайте определим отношение для получения родительской записи из модели комментария. Для описания обратной связи hasMany служит метод belongsTo:
-
-    <?php
-
-    namespace App;
-
-    use Illuminate\Database\Eloquent\Model;
-
-    class Comment extends Model
-    {
-        /**
-         * Получить родительскую запись комментария.
-         */
-        public function post()
-        {
-            return $this->belongsTo('App\Post');
-        }
-    }
-Теперь, когда отношение описано, мы можем получить родительский объект Post для Comment через "динамический атрибут" post:
-
-    $comment = App\Comment::find(1);
-
-    echo $comment->post->title;
-
-Eloquent будет пытаться найти объект Post с id равным post_id модели Comment. Eloquent по умолчанию определяет имя внешнего ключа по имени метода, задающего отношение с суффиксом _id. Однако, если в модели Comment внешний ключ не равен post_id, можно передать свое имя в метод belongsTo:
-
-    /**
-     * Получить родительскую запись комментария.
-     */
-    public function post()
-    {
-        return $this->belongsTo('App\Post', 'foreign_key');
-    }
-Если родительская модель не использует id в качестве первичного ключа, или вы хотите связать дочернею модель с родительской по другой колонке, можно передать третьим параметром в метод belongsTo имя ключа для связи:
-
-    /**
-     * Получить родительскую запись комментария.
-     */
-    public function post()
-    {
-        return $this->belongsTo('App\Post', 'foreign_key', 'other_key');
-    }
-
-Многие ко многим
+admin.users.form
 ----------------
-Отношения типа «многие ко многим» - более сложные, чем остальные виды отношений. Примером может служить пользователь, имеющий много ролей, где роли также относятся ко многим пользователям. Например, один пользователь может иметь роль «Admin». Для этой связи нужны три таблицы : users, roles и role_user. Название таблицы role_user происходит от упорядоченного по алфавиту имён связанных моделей и она должна иметь поля user_id и role_id.
+    <div class="form-group">
+      {!! Form::label('name', 'Name:') !!}
+      {!! Form::text('name', null, ['class' => 'form-control', 'autofocus' => 'autofocus']) !!}
+    </div>
+    <div class="form-group">
+      {!! Form::label('email', 'Email:') !!}
+      {!! Form::email('email', null, ['class' => 'form-control', 'autofocus' => 'autofocus']) !!}
+    </div>
+    <div class="form-group">
+      {!! Form::label('password', 'Password:') !!}
+      {!! Form::password('password', null, ['class' => 'form-control', 'autofocus' => 'autofocus']) !!}
+    </div>
+    <div class="form-group">
+      {!! Form::submit($submitButtonText, ['class' => 'btn btn-primary form-control']) !!}
+    </div>
 
-Вы можете определить отношение «многие ко многим» через метод belongsToMany. Давайте для примера определим связь roles в модели User:
+    @section('header')
+      <link rel="stylesheet" href="/admin-assets/css/select2.min.css">
+    @endsection
+
+    @section('footer')
+      <script>
+        $('#tag_list').select2({
+          placeholder: 'Choose a tag',
+          tags: true
+        });
+      </script>
+    @endsection
+
+
+admin.users.create
+------------------
+
+    @extends ('layouts.dashboard')
+    @section('page_heading','New User')
+
+    @section('section')
+    <div class="col-sm-12">
+    <div class="row">
+        <div class="col-lg-12">
+            {!! Form::open(['route' => 'admin.users.store', 'class' => 'form']) !!}
+            
+              @include('admin.users.form',['submitButtonText'=>'Save'])
+            {!! Form::close() !!}
+      </div>
+
+    </div>
+    </div>
+    @stop
+
+admin.users.edit
+----------------
+
+    @extends ('layouts.dashboard')
+    @section('page_heading','Edit User')
+
+    @section('section')
+    <div class="col-sm-12">
+    <div class="row">
+        <div class="col-lg-12">
+            {!! Form::model($user,['method'=>'PATCH','url' => 'admin/users/'.$user->id]) !!}
+              @include('admin.users.form',['submitButtonText'=>'Update Tag'])
+            {!! Form::close() !!}
+      </div>
+
+    </div>
+    </div>
+    @stop
+
+
+Аутентификация
+==============
+Аутентификация - это процесс сопоставления введенных логина и пароля с данными зарегистрированных пользователей сайта и определение, является ли пользователь сайта одним из них (тогда следует логин пользователя) или нет (тогда пользователь получает сообщение об ошибке). Не путать с авторизацией - процессом проверки прав на выполнение какого-либо действия. Это разные вещи, но для каждой из них Laravel предоставляет удобные инструменты.
+
+Аутентификация в Laravel делается очень просто. Фактически, почти всё уже готово к использованию «из коробки». Настройки аутентификации находятся в файле config/auth.php, который содержит несколько хорошо документированных опций.
+
+Фактически, подсистема аутентификации Laravel состоит из двух частей:
+
+Guards, "гарды", "охранники". Это по сути правила аутентификации пользователя - в каких частях запроса хранить информацию о том, что данный запрос идет от аутентифицированного пользователя. Например, это можно делать в сессии/куках, или в некотором токене, который должен содержаться в каждом запросе. В Laravel это гарды session и token соответственно.
+
+Providers, "провайдеры". Они определяют, как можно получить данные пользователя из базы данных или другого места хранения. В Laravel можно получать пользователя через Eloquent и Query Builder, но вы можете написать свой провайдер, если по каким-то причинам, хотите хранить даные пользователей, например, в файле.
+Можно создавать собственные гарды и провайдеры. Это нужно, если у вас, например, несколько таблиц с пользователями, или несколько областей в приложении, куда нужно логиниться отдельно, даже уже аутентифицированным пользователям - например, админка.
+
+Но если вы только изучаете фреймворк - не беспокойтесь, чтобы использовать аутентификацию в Laravel вам не нужно досконально разбираться, как работают гарды и провайдеры. Весь необходимый код уже написан, и схема, которая принята по умолчанию, подойдет практически всем.
+
+
+Настройки базы данных
+---------------------
+По умолчанию Laravel использует модель App\User Eloquent в каталоге app. Эта модель может использоваться вместе с драйвером аутентификации на базе Eloquent. Если ваше приложение не использует Eloquent, вы можете применить драйвер аутентификации database, который использует Query Builder.
+
+При создании схемы базы данных для модели App\User убедитесь, что поле пароля имеет длину минимум в 60 символов. Дефолтное значение для поля varchar - 255 - подойдет замечательно.
+
+Также вы должны убедиться, что ваша таблица users (или её эквивалент) содержит строковое nullable поле remember_token длиной в 100 символов. Это поле используется для хранения токена сессии, если ваше приложение предоставляет функциональность «запомнить меня». Создать такое поле можно с помощью $table->rememberToken(); в миграции.
+
+Controllers\Auth
+-----------------
+Laravel оснащён двумя контроллерами аутентификации «из коробки». Они находятся в пространстве имён App\Http\Controllers\Auth. AuthController обрабатывает регистрацию и аутентификацию пользователей, а PasswordController содержит логику для сброса паролей существующих пользователей. Каждый из этих контроллеров использует трейты для включения необходимых методов. В большинстве случаев вам не понадобится редактировать эти контроллеры.
+
+
+Routing
+--------
+Чтобы сгенерировать роуты и шаблоны, которые нужны для процесса аутентификации (страница регистрации, логина, восстановления пароля и т.п.), вам нужно даль всего одну команду:
+
+    php artisan make:auth
+
+Вместе с ними создастся контроллер HomeController, куда будет вести редирект после успешного логина пользователя.
+
+Естественно, вы можете отредактировать эти сгенерированные файлы так, как вам нужно.
+
+
+Views
+-----
+шаблоны страниц регистрации создаются при помощи команды, в папке resources/views/auth. Кроме того, будет создан главный шаблон приложения resources/views/layouts, в который эти шаблоны будут подключаться. Вы можете строить приложение опираясь на этот главный шаблон, или использовать вместо него свой.
+
+
+Аутентификация
+---------------
+Контроллеры аутентификации уже были в приложении, роуты и шаблоны вы только что сгененировали. Всё, теперь пользователи могут регистрироваться и логиниться в ваше приложение.
+
+Настройка путей
+---------------
+После успешного логина пользователя надо куда-то редиректить. Куда именно - за это отвечает свойство redirectTo класса AuthController:
+
+  protected $redirectTo = '/home';
+
+Если логин не успешный, то происходит автоматический редирект назад на страницу логина.
+
+
+class AuthController
+--------------------
 
     <?php
 
-    namespace App;
+    namespace App\Http\Controllers\Auth;
 
-    use Illuminate\Database\Eloquent\Model;
+    use App\User;
+    use Validator;
+    use App\Http\Controllers\Controller;
+    use Illuminate\Foundation\Auth\ThrottlesLogins;
+    use Illuminate\Foundation\Auth\AuthenticatesAndRegistersUsers;
 
-    class User extends Model
+    class AuthController extends Controller
     {
+        /*
+        |--------------------------------------------------------------------------
+        | Registration & Login Controller
+        |--------------------------------------------------------------------------
+        |
+        | This controller handles the registration of new users, as well as the
+        | authentication of existing users. By default, this controller uses
+        | a simple trait to add these behaviors. Why don't you explore it?
+        |
+        */
+
+        use AuthenticatesAndRegistersUsers, ThrottlesLogins;
+
         /**
-         * Роли, к которым принадлежит пользователь.
+         * Where to redirect users after login / registration.
+         *
+         * @var string
          */
-        public function roles()
+        protected $redirectTo = '/';
+
+        /**
+         * Create a new authentication controller instance.
+         *
+         * @return void
+         */
+        public function __construct()
         {
-            return $this->belongsToMany('App\Role');
+            $this->middleware($this->guestMiddleware(), ['except' => 'logout']);
+        }
+
+        /**
+         * Get a validator for an incoming registration request.
+         *
+         * @param  array  $data
+         * @return \Illuminate\Contracts\Validation\Validator
+         */
+        protected function validator(array $data)
+        {
+            return Validator::make($data, [
+                'name' => 'required|max:255',
+                'email' => 'required|email|max:255|unique:users',
+                'password' => 'required|min:6|confirmed',
+            ]);
+        }
+
+        /**
+         * Create a new user instance after a valid registration.
+         *
+         * @param  array  $data
+         * @return User
+         */
+        protected function create(array $data)
+        {
+            return User::create([
+                'name' => $data['name'],
+                'email' => $data['email'],
+                'password' => bcrypt($data['password']),
+            ]);
         }
     }
-Когда отношение описано, мы можем получить роли пользователя через динамический атрибут roles:
 
-    $user = App\User::find(1);
 
-    foreach ($user->roles as $role) {
-        //
-    }
-И конечно же, как и в случае с любым другим типом отношений, можно выстраивать цепочки вызовов таким образом:
+Admin\AuthController
+--------------------
 
-    $roles = App\User::find(1)->roles()->orderBy('name')->get();
+    <?php namespace App\Http\Controllers\Admin;
 
-имя связующей таблицы по умолчанию строится по именам моделей в алфавитном порядке. Однако его можно переопределить. Делается это при помощи второго параметра метода belongsToMany:
+    use App\Http\Controllers\Controller;
+    use Auth;
+    use Illuminate\Http\Request;
 
-    return $this->belongsToMany('App\Role', 'role_user');
-Помимо собственного названия связующей таблицы​, можно также переопределить имена колонок-ключей при помощи дополнительных параметров метода belongsToMany. Третий аргумент — колонка, ссылающаяся на модель, в которой вы описываете отношение, четвертый — колонка, ссылающаяся на модель с которой строится связь:
-
-    return $this->belongsToMany('App\Role', 'role_user', 'user_id', 'role_id');
-
-Определение обратного отношения
--------------------------------
-Для определения обратного отношения «многие ко многим» необходимо просто добавить такой же вызов метода belongsToMany но, со стороны другой модели. В продолжение нашего примера с ролями пользователя, определим метод users в модели Role:
-
-    <?php
-
-    namespace App;
-
-    use Illuminate\Database\Eloquent\Model;
-
-    class Role extends Model
+    class AuthController extends Controller
     {
-        /**
-         * Пользователи, которые принадлежат данной роли.
-         */
-        public function users()
+        public function __construct()
         {
-            return $this->belongsToMany('App\User');
+            $this->middleware('guest', ['except' => 'logout']);
+        }
+
+        /**
+         * Show the application login form.
+         *
+         * @return \Illuminate\Http\Response
+         */
+        public function getLogin()
+        {
+            return view('admin.login');
+        }
+
+        /**
+         * Handle a login request to the application.
+         *
+         * @param \Illuminate\Http\Request $request
+         *
+         * @return \Illuminate\Http\Response
+         */
+        public function postLogin(Request $request)
+        {
+            $credentials = $request->only('email', 'password');
+
+            if (Auth::attempt($credentials, $request->has('remember'))) {
+                return redirect()->intended('/admin/index');
+            }
+
+            return redirect('/login')
+                        ->withInput($request->only('email', 'remember'))
+                        ->withErrors([
+                            'email' => 'These credentials do not match our records.',
+                        ]);
+        }
+
+        /**
+         * Log the user out of the application.
+         *
+         * @return \Illuminate\Http\Response
+         */
+        public function logout()
+        {
+            Auth::logout();
+
+            return redirect('/');
         }
     }
 
-отношение описывается точно также, как обратное, со стороны пользователя, с той лишь разницей, что ссылаемся мы теперь на модель App\User. Т.к. вызов метода belongsToMany является таким же точно, как и выше, все опции по заданию собственных имен таблиц и колонок выглядят идентично.
 
-Работа с данными связующих таблиц
----------------------------------
-Как вы уже знаете отношения типа «многие ко многим» требует дополнительную связующую таблицу. Eloquent позволяет работать с этой таблицей, что бывает весьма полезно. Предположим, что наш объект User имеет много ролей (объектов Role). После того, как мы получили объект отношения, мы можем получить доступ к связующей таблице при помощи атрибута pivot у каждого из объектов:
+admin.login
+-----------
+      <!DOCTYPE html>
+      <html lang="en">
 
-    $user = App\User::find(1);
+      <head>
 
-    foreach ($user->roles as $role) {
-        echo $role->pivot->created_at;
-    }
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="description" content="">
+        <meta name="author" content="">
 
-у каждой из моделей Role есть автоматически созданный атрибут pivot. Этот атрибут представляет из себя модель с данными связующей таблицы, и может использоваться как обычный объект Eloquent.
+        <title>Please Sign In</title>
 
-По умолчанию, в объекте pivot будут присутствовать только ключи моделей. Если ваша связующая таблица содержит дополнительные атрибуты, их необходимо перечислить при описании отношения:
+        @include('admin.partials.header')
 
-    return $this->belongsToMany('App\Role')->withPivot('column1', 'column2');
+      </head>
 
-Если вы хотите, чтобы связующая таблица автоматически поддерживала таймстемпы created_at и updated_at, используйте метод withTimestamps при описании отношения:
+      <body>
 
-    return $this->belongsToMany('App\Role')->withTimestamps();
+        <div class="container">
+          <div class="row">
+            <div class="col-md-4 col-md-offset-4">
+              <div class="login-panel panel panel-default">
+                <div class="panel-heading">
+                  <h3 class="panel-title">Please Sign In</h3>
+                </div>
+                <div class="panel-body">
+                  @if (count($errors) > 0)
+                    <div class="alert alert-danger">
+                      <strong>Whoops!</strong> There were some problems with your input.<br><br>
+                      <ul>
+                        @foreach ($errors->all() as $error)
+                          <li>{{ $error }}</li>
+                        @endforeach
+                      </ul>
+                    </div>
+                  @endif
+                  {!! Form::open(['url' => '/login', 'role' => 'from', 'method' => 'post']) !!}
+                    <fieldset>
+                      <div class="form-group">
+                        {!! Form::email('email', null, ['class' => 'form-control', 'autofocus' => 'autofocus']) !!}
+                      </div>
+                      <div class="form-group">
+                        {!! Form::password('password', ['class' => 'form-control']) !!}
+                      </div>
+                      <div class="checkbox">
+                        <label>
+                        {!! Form::checkbox('remember', null) !!}Remember Me
+                        </label>
+                      </div>
+                      <div class="form-group">
+                        {!! Form::submit('Login', ['class' => 'btn btn-lg btn-success btn-block']) !!}
+                      </div>
+                    </fieldset>
+                  {!! Form::close() !!}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
 
+        @include('admin.partials.footer')
+
+      </body>
+
+      </html>
+
+
+routes.php
+----------
+
+    Route::get('login', 'Admin\AuthController@getLogin');
+    Route::post('login', 'Admin\AuthController@postLogin');
+    Route::get('logout', 'Admin\AuthController@logout');
+
+
+
+    Route::group(['prefix'=>'admin', 'namespace' => 'Admin', 'middleware' => 'auth'],function(){
+        Route::any('/','DashboardController@index');
+
+        Route::resource('index', 'DashboardController');
+        Route::resource('categories','CategoriesController');
+        Route::resource('articles','ArticlesController');
+        Route::resource('tags','TagsController');
+        Route::resource('users','UsersController');
+    });
